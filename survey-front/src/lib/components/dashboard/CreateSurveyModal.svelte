@@ -8,21 +8,45 @@
 		addSurvey
 	} = $props();
 
+
 	let title = $state('');
 	let description = $state('');
+	let loading = $state(false);
 
-	function createSurvey() {
-	if (!title.trim()) return;
 
-	addSurvey({
-		title,
-		description
-	});
+	async function createSurvey() {
 
-	title = '';
-	description = '';
-	open = false;
-}
+		if (!title.trim()) return;
+
+		loading = true;
+
+		try {
+
+			await addSurvey({
+				title: title.trim(),
+				description: description.trim()
+			});
+
+
+			title = '';
+			description = '';
+			open = false;
+
+
+		} catch (error) {
+
+			console.error(
+				"Failed to create survey:",
+				error
+			);
+
+		} finally {
+
+			loading = false;
+
+		}
+	}
+
 
 	function close() {
 		title = '';
@@ -31,26 +55,39 @@
 	}
 </script>
 
+
 <Modal {open}>
+
 	<div class="space-y-5">
+
 		<h2 class="text-2xl font-bold">
 			Create Survey
 		</h2>
 
+
 		<div class="space-y-2">
-			<label for="title" class="text-sm font-medium">Survey Title</label>
+
+			<label for="title" class="text-sm font-medium">
+				Survey Title
+			</label>
+
 
 			<Input
 				id="title"
 				bind:value={title}
 				placeholder="Enter survey title..."
 			/>
+
 		</div>
 
+
+
 		<div class="space-y-2">
+
 			<label for="description" class="text-sm font-medium">
 				Description
 			</label>
+
 
 			<textarea
 				id="description"
@@ -59,19 +96,32 @@
 				class="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
 				placeholder="Enter a short description..."
 			></textarea>
+
 		</div>
 
+
+
 		<div class="flex justify-end gap-3">
+
 			<Button
 				variant="secondary"
 				onclick={close}
+				disabled={loading}
 			>
 				Cancel
 			</Button>
 
-			<Button onclick={createSurvey}>
-				Create Survey
+
+			<Button
+				onclick={createSurvey}
+				disabled={loading}
+			>
+				{loading ? 'Creating...' : 'Create Survey'}
 			</Button>
+
 		</div>
+
+
 	</div>
+
 </Modal>
