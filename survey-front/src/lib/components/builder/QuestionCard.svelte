@@ -30,7 +30,7 @@
 </script>
 
 <div
-	class="rounded-xl border border-slate-200 bg-white p-4 transition hover:border-violet-300 hover:shadow-sm"
+	class="group cursor-pointer rounded-2xl border border-[#E8E2F2] bg-white p-5 transition-all duration-200 hover:border-[#D4BEE4] hover:shadow-md"
 	role="button"
 	tabindex="0"
 	onclick={() => onSelect?.(question)}
@@ -41,30 +41,37 @@
 		}
 	}}
 >
+
+	<!-- Header -->
+
 	<div class="flex items-start justify-between gap-4">
 
 		<div class="flex-1">
 
-			<div class="flex items-center gap-2">
-				<p class="text-xs font-semibold uppercase tracking-wide text-violet-600">
-					{typeLabels[question.type] ?? question.type}
-				</p>
+			<div class="flex flex-wrap items-center gap-2">
+
+				<span class="rounded-full bg-[#F3ECFA] px-3 py-1 text-xs font-medium text-[#3B1E54]">
+					{typeLabels[question.type]}
+				</span>
 
 				{#if question.required}
-					<span class="rounded bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-600">
+					<span class="rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-600">
 						Required
 					</span>
 				{/if}
+
 			</div>
 
-			<h4 class="mt-2 font-medium text-slate-900">
-				{question.label || 'Untitled question'}
-			</h4>
+			<h3 class="mt-4 text-lg font-semibold text-[#3B1E54]">
+				{question.label || 'Untitled Question'}
+			</h3>
 
 			{#if question.description}
-				<p class="mt-1 text-sm text-slate-500">
+
+				<p class="mt-2 text-sm leading-6 text-slate-500">
 					{question.description}
 				</p>
+
 			{/if}
 
 		</div>
@@ -74,47 +81,75 @@
 			<Button
 				variant="ghost"
 				size="icon"
+				class="text-slate-400 hover:bg-[#F3ECFA] hover:text-[#3B1E54]"
 				onclick={duplicate}
 			>
-				<Copy size={16} />
+				<Copy size={16}/>
 			</Button>
 
 			<Button
 				variant="ghost"
 				size="icon"
-				class="text-red-500 hover:bg-red-50"
+				class="text-slate-400 hover:bg-red-50 hover:text-red-500"
 				onclick={remove}
 			>
-				<Trash2 size={16} />
+				<Trash2 size={16}/>
 			</Button>
 
 		</div>
 
 	</div>
 
-	<div class="mt-4">
+	<!-- Preview -->
+
+	<div class="mt-6 rounded-xl bg-[#FAF8FD] p-4">
 
 		{#if question.type === 'short_text' || question.type === 'email'}
 
-			<div class="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-400">
-				{question.placeholder || 'User answer'}
+			<div class="rounded-lg border border-[#E8E2F2] bg-white px-4 py-3 text-sm text-slate-400">
+				{question.placeholder || 'Short answer'}
 			</div>
 
 		{:else if question.type === 'long_text'}
 
-			<div class="h-20 rounded-lg border border-slate-200 p-3 text-sm text-slate-400">
+			<div class="h-24 rounded-lg border border-[#E8E2F2] bg-white p-4 text-sm text-slate-400">
 				{question.placeholder || 'Long answer'}
 			</div>
 
-		{:else if question.type === 'single_choice' || question.type === 'multiple_choice'}
+		{:else if question.type === 'single_choice'}
 
-			<div class="space-y-2">
+			<div class="space-y-3">
 
 				{#each question.options ?? [] as option}
 
-					<div class="flex items-center gap-2 text-sm text-slate-600">
-						<div class="h-4 w-4 rounded-full border border-slate-300"></div>
-						{option}
+					<div class="flex items-center gap-3">
+
+						<div class="h-4 w-4 rounded-full border-2 border-[#9B7EBD]"></div>
+
+						<span class="text-sm text-slate-600">
+							{option}
+						</span>
+
+					</div>
+
+				{/each}
+
+			</div>
+
+		{:else if question.type === 'multiple_choice'}
+
+			<div class="space-y-3">
+
+				{#each question.options ?? [] as option}
+
+					<div class="flex items-center gap-3">
+
+						<div class="h-4 w-4 rounded border-2 border-[#9B7EBD]"></div>
+
+						<span class="text-sm text-slate-600">
+							{option}
+						</span>
+
 					</div>
 
 				{/each}
@@ -123,10 +158,12 @@
 
 		{:else if question.type === 'rating'}
 
-			<div class="flex gap-2 text-xl text-slate-400">
-				{#each [1, 2, 3, 4, 5] as _}
-					<span>☆</span>
+			<div class="flex gap-2 text-2xl text-[#D4BEE4]">
+
+				{#each [1,2,3,4,5] as _}
+					<span>★</span>
 				{/each}
+
 			</div>
 
 		{/if}

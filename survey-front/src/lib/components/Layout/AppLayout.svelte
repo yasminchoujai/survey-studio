@@ -4,12 +4,15 @@
 	let { children } = $props();
 </script>
 
-<div class="flex h-screen overflow-hidden bg-slate-50">
+
+<div class="flex h-screen overflow-hidden bg-[#FAFAFC]">
 
 	<Sidebar />
 
-	<main class="flex-1 overflow-y-auto">
+	<main class="flex-1 overflow-hidden">
+
 		{@render children()}
+
 	</main>
 
 </div>
