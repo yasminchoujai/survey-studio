@@ -19,8 +19,26 @@
 	}
 
 
+	function formatDate(date) {
+		if (!date) return '';
+
+		return new Date(date).toLocaleDateString('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric'
+		});
+	}
+
+
+	function formatStatus(status) {
+		if (!status) return '';
+
+		return status.charAt(0).toUpperCase() + status.slice(1);
+	}
+
+
 	const badgeVariant =
-		survey.status === 'Published'
+		survey.status?.toLowerCase() === 'published'
 			? 'published'
 			: 'draft';
 </script>
@@ -30,9 +48,7 @@
 	class="flex h-full flex-col border border-slate-200 bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
 >
 
-	<!-- Header -->
 	<div class="flex items-start justify-between gap-3">
-
 
 		<div class="min-w-0">
 
@@ -41,7 +57,6 @@
 			</h3>
 
 
-			<!-- Fixed description height -->
 			<div class="mt-2 h-10">
 
 				<p class="line-clamp-2 text-sm leading-5 text-slate-500">
@@ -53,11 +68,10 @@
 		</div>
 
 
-
 		<div class="flex items-center gap-2">
 
 			<Badge variant={badgeVariant}>
-				{survey.status}
+				{formatStatus(survey.status)}
 			</Badge>
 
 
@@ -71,10 +85,6 @@
 	</div>
 
 
-
-
-
-	<!-- Statistics -->
 
 	<div class="my-6 grid grid-cols-2 gap-3">
 
@@ -96,11 +106,10 @@
 
 
 			<p class="mt-3 text-xl font-bold text-slate-900">
-				{survey.responses}
+				{survey.responses ?? 0}
 			</p>
 
 		</div>
-
 
 
 
@@ -122,7 +131,7 @@
 
 
 			<p class="mt-3 text-sm font-semibold text-slate-900">
-				{survey.updatedAt}
+				{formatDate(survey.updatedAt)}
 			</p>
 
 		</div>
@@ -131,10 +140,6 @@
 	</div>
 
 
-
-
-
-	<!-- Bottom Action -->
 
 	<div class="mt-auto pt-2">
 

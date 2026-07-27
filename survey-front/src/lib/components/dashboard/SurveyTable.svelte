@@ -7,31 +7,31 @@
 	} = $props();
 </script>
 
-<div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+<div class="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm">
 
 	<table class="min-w-full">
 
-		<thead class="border-b bg-slate-50">
+		<thead class="border-b border-slate-200 bg-slate-50">
 
 			<tr>
 
-				<th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+				<th class="w-[45%] px-8 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
 					Survey
 				</th>
 
-				<th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+				<th class="w-[15%] px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
 					Status
 				</th>
 
-				<th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+				<th class="w-[12%] px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
 					Responses
 				</th>
 
-				<th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+				<th class="w-[18%] px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
 					Last Updated
 				</th>
 
-				<th class="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
+				<th class="w-[10%] px-8 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
 					Actions
 				</th>
 
@@ -41,14 +41,29 @@
 
 		<tbody class="divide-y divide-slate-100">
 
-			{#each surveys as survey (survey.id)}
+			{#if surveys.length === 0}
 
-				<SurveyRow
-					{survey}
-					{deleteSurvey}
-				/>
+				<tr>
+					<td
+						colspan="5"
+						class="px-8 py-16 text-center text-slate-500"
+					>
+						No surveys yet.
+					</td>
+				</tr>
 
-			{/each}
+			{:else}
+
+				{#each surveys as survey (survey.id)}
+
+					<SurveyRow
+						{survey}
+						{deleteSurvey}
+					/>
+
+				{/each}
+
+			{/if}
 
 		</tbody>
 

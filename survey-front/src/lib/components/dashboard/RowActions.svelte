@@ -1,115 +1,65 @@
 <script>
 	import { goto } from '$app/navigation';
 	import {
-		MoreVertical,
 		Pencil,
 		Trash2,
 		Eye,
 		BarChart3
 	} from 'lucide-svelte';
 
-
 	let { survey, deleteSurvey } = $props();
 
-
-	let open = $state(false);
-
-
-
 	function edit() {
-		open = false;
 		goto(`/surveys/${survey.id}/builder`);
 	}
 
-
 	function preview() {
-		open = false;
 		goto(`/surveys/${survey.id}`);
 	}
 
-
 	function responses() {
-		open = false;
 		goto(`/surveys/${survey.id}/responses`);
 	}
 
-
 	function remove() {
-		open = false;
 		deleteSurvey(survey.id);
 	}
-
 </script>
 
-
-
-<div class="relative">
-
+<div class="flex items-center justify-end gap-1">
 
 	<button
-		onclick={() => open = !open}
-		class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+		onclick={edit}
+		class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-violet-100 hover:text-violet-600"
+		title="Edit"
 	>
-		<MoreVertical size={18}/>
+		<Pencil size={18} />
 	</button>
 
+	<button
+		onclick={preview}
+		class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-sky-100 hover:text-sky-600"
+		title="Preview"
+	>
+		<Eye size={18} />
+	</button>
 
+	<button
+		onclick={responses}
+		class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-emerald-100 hover:text-emerald-600"
+		title="Responses"
+	>
+		<BarChart3 size={18} />
+	</button>
 
+	<div class="mx-1 h-5 w-px bg-slate-200"></div>
 
-
-	{#if open}
-
-		<div
-			class="absolute right-0 top-10 z-30 w-44 rounded-xl border border-slate-200 bg-white p-1 shadow-lg"
-		>
-
-
-			<button
-				onclick={edit}
-				class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-600"
-			>
-				<Pencil size={16}/>
-				Edit
-			</button>
-
-
-
-			<button
-				onclick={preview}
-				class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-sky-50 hover:text-sky-600"
-			>
-				<Eye size={16}/>
-				Preview
-			</button>
-
-
-
-			<button
-				onclick={responses}
-				class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-emerald-50 hover:text-emerald-600"
-			>
-				<BarChart3 size={16}/>
-				Responses
-			</button>
-
-
-
-			<div class="my-1 border-t border-slate-100"></div>
-
-
-
-			<button
-				onclick={remove}
-				class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-			>
-				<Trash2 size={16}/>
-				Delete
-			</button>
-
-
-		</div>
-
-	{/if}
-
+	<button
+		onclick={remove}
+		class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-100 hover:text-red-600"
+		title="Delete"
+	>
+		<Trash2 size={18} />
+	</button>
 
 </div>

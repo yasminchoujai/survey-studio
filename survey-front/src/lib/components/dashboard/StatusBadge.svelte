@@ -3,12 +3,24 @@
 
 	let { status } = $props();
 
+
+	const normalizedStatus =
+		status?.toLowerCase();
+
+
 	const variant =
-		status === 'Published'
+		normalizedStatus === 'published'
 			? 'published'
 			: 'draft';
+
+
+	const displayStatus =
+		status
+			? status.charAt(0).toUpperCase() + status.slice(1)
+			: '';
 </script>
 
+
 <Badge {variant}>
-	{status}
+	{displayStatus}
 </Badge>
