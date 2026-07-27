@@ -20,6 +20,10 @@ import {
 	deleteQuestion as deleteQuestionApi
 } from '$lib/api/questions';
 
+import {
+	getResponses as fetchResponses
+} from '$lib/api/responses';
+
 let surveys = $state([]);
 
 function save() {}
@@ -239,6 +243,26 @@ async function duplicateQuestion(
 	}
 }
 
+/* ===========================
+   Responses
+=========================== */
+
+async function getResponses(surveyId) {
+	return await fetchResponses(surveyId)
+}
+
+async function getSurveyWithResponses(surveyId) {
+	const [survey, responses] = await Promise.all([
+		getSurvey(surveyId),
+		fetchResponses(surveyId)
+	]);
+
+	return {
+		survey,
+		responses
+	};
+}
+
 export function useSurveys() {
 	return {
 		surveys,
@@ -252,6 +276,8 @@ export function useSurveys() {
 		addQuestion,
 		updateQuestion,
 		deleteQuestion,
-		duplicateQuestion
+		duplicateQuestion,
+		getResponses,
+		getSurveyWithResponses
 	};
 }
