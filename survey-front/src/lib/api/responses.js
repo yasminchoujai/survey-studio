@@ -18,7 +18,7 @@ export async function getResponses(surveyId) {
 
 export async function submitResponse(surveyId, answers) {
 	const response = await fetch(
-		`${API_URL}/surveys/responses`,
+		`${API_URL}/responses`,
 		{
 			method: 'POST',
 			headers: {
