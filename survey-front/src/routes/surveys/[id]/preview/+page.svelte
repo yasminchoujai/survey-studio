@@ -5,91 +5,82 @@
 	import { useSurveys } from '$lib/stores/surveys.svelte';
 
 	import PreviewHeader from '$lib/components/preview/PreviewHeader.svelte';
-	import SurveyHero from '$lib/components/preview/SurveyHero.svelte';
+	import PreviewHero from '$lib/components/preview/PreviewHero.svelte';
 	import PreviewSection from '$lib/components/preview/PreviewSection.svelte';
-
-	import Button from '$lib/components/ui/Button.svelte';
-
+	import PreviewFooter from '$lib/components/preview/PreviewFooter.svelte';
 
 	const { getSurvey } = useSurveys();
 
 	let survey = $state(null);
 	let loading = $state(true);
-
+	let error = $state('');
 
 	onMount(async () => {
 		try {
-			survey = await getSurvey(page.params.id);
-		}
-		finally {
+			const data = await getSurvey(page.params.id);
+
+			console.log('Survey:', data);
+
+			survey = data;
+		} catch (err) {
+			console.error(err);
+			error = err?.message ?? 'Failed to load survey.';
+		} finally {
 			loading = false;
 		}
 	});
 </script>
 
-
 {#if loading}
 
-	<div class="flex items-center justify-center py-20">
-		<p class="text-(--text-muted)">
-			Loading...
-		</p>
+	<div class="flex h-full items-center justify-center">
+		<p class="text-slate-500">Loading survey...</p>
 	</div>
 
+{:else if error}
+
+	<div class="flex h-full items-center justify-center">
+		<p class="text-red-500">{error}</p>
+	</div>
 
 {:else if survey}
 
+	<div class="flex h-full flex-col bg-slate-50">
 
-<div class="bg-(--background)">
+		<PreviewHeader survey={survey} />
 
-	<PreviewHeader {survey}/>
+		<div class="flex-1 overflow-y-auto">
 
+			<div class="mx-auto max-w-4xl px-6 py-6">
 
-	<main class="mx-auto max-w-4xl px-6 py-8">
+				<div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
+					<PreviewHero survey={survey} />
 
-		<div class="overflow-hidden rounded-2xl border border-(--border) bg-white shadow-sm">
+					<div class="space-y-12 p-8">
 
+						{#each survey.sections ?? [] as section (section.id)}
 
-			<SurveyHero {survey}/>
+							<PreviewSection section={section} />
 
+						{/each}
 
-			<div class="space-y-10 p-8">
+					</div>
 
-
-				{#each survey.sections as section}
-
-					<PreviewSection {section}/>
-
-				{/each}
-
-
-			</div>
-
-
-			<div class="border-t border-(--border) p-6">
-
-
-				<div class="flex justify-end">
-
-					<Button>
-						Submit Survey
-					</Button>
-
+					<PreviewFooter />
 
 				</div>
 
-
 			</div>
-
 
 		</div>
 
+	</div>
 
-	</main>
+{:else}
 
-
-</div>
-
+	<div class="flex h-full items-center justify-center">
+		<p class="text-slate-500">Survey not found.</p>
+	</div>
 
 {/if}

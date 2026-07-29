@@ -31,50 +31,72 @@
 		load();
 	});
 
-	let filteredSurveys = $derived(
-		surveys.filter((survey) => {
+	let filteredSurveys = $derived.by(() => {
+		return surveys.filter((survey) => {
 			const matchesSearch =
-				survey.title.toLowerCase().includes(search.toLowerCase()) ||
-				survey.description.toLowerCase().includes(search.toLowerCase());
+				survey.title
+					.toLowerCase()
+					.includes(search.toLowerCase()) ||
+				survey.description
+					.toLowerCase()
+					.includes(search.toLowerCase());
 
 			const matchesStatus =
-				status === 'All' || survey.status === status;
+				status === 'All' ||
+				survey.status === status;
 
 			return matchesSearch && matchesStatus;
-		})
-	);
+		});
+	});
 
-	let totalPages = $derived(
-		Math.max(1, Math.ceil(filteredSurveys.length / pageSize))
-	);
-
-	let paginatedSurveys = $derived(
-		filteredSurveys.slice(
-			(currentPage - 1) * pageSize,
-			currentPage * pageSize
+	let totalPages = $derived.by(() =>
+		Math.max(
+			1,
+			Math.ceil(filteredSurveys.length / pageSize)
 		)
 	);
+
+	let paginatedSurveys = $derived.by(() => {
+		const start = (currentPage - 1) * pageSize;
+
+		return filteredSurveys.slice(
+			start,
+			start + pageSize
+		);
+	});
+
+	$effect(() => {
+		search;
+		status;
+
+		currentPage = 1;
+	});
+
+	$effect(() => {
+		if (currentPage > totalPages) {
+			currentPage = totalPages;
+		}
+	});
 </script>
 
 <div class="mx-auto max-w-7xl space-y-6 p-8">
 
-	<div>
-		
-		<div class="mb-8 flex items-center justify-between">
-	     <div>
+	<div class="mb-8 flex items-center justify-between">
 
-		  <h1 class="text-3xl font-bold text-gray-900">
-			Survey Dashboard
-		  </h1>
+		<div>
 
-		   <p class="mt-1 text-gray-500">
-			Manage and organize your surveys in one place.
-		   </p>
+			<h1 class="text-3xl font-bold text-gray-900">
+				Survey Dashboard
+			</h1>
 
-	    </div>
+			<p class="mt-1 text-gray-500">
+				Manage and organize your surveys in one place.
+			</p>
 
-     </div>
+		</div>
+
 	</div>
+
 	<DashboardToolbar
 		bind:search
 		bind:status
@@ -85,6 +107,7 @@
 	{#if paginatedSurveys.length === 0}
 
 		<Card>
+
 			<div class="flex flex-col items-center justify-center py-16">
 
 				<h2 class="mt-4 text-2xl font-semibold">
@@ -96,6 +119,7 @@
 				</p>
 
 			</div>
+
 		</Card>
 
 	{:else}
@@ -103,21 +127,27 @@
 		{#if view === 'table'}
 
 			<Card>
+
 				<SurveyTable
 					surveys={paginatedSurveys}
 					{deleteSurvey}
 				/>
+
 			</Card>
 
 		{:else}
 
 			<div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-				{#each paginatedSurveys as survey}
+
+				{#each paginatedSurveys as survey (survey.id)}
+
 					<SurveyCard
 						{survey}
 						{deleteSurvey}
 					/>
+
 				{/each}
+
 			</div>
 
 		{/if}

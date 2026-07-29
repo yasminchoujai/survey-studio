@@ -1,30 +1,36 @@
 <script>
 	import PreviewQuestion from './PreviewQuestion.svelte';
 
-	let {
-		section
-	} = $props();
+	let { section } = $props();
 </script>
 
 <section class="space-y-8">
 
 	{#if section.title && section.title !== 'Untitled Section'}
 
-		<div>
+		<div class="space-y-2">
 
-			<h2 class="text-xl font-semibold text-slate-900">
+			<h2 class="text-2xl font-semibold text-slate-900">
 				{section.title}
 			</h2>
 
-			<div class="mt-3 h-px bg-slate-200"></div>
+			{#if section.description}
+				<p class="text-slate-500">
+					{section.description}
+				</p>
+			{/if}
+
+			<div class="pt-2">
+				<div class="h-px bg-slate-200"></div>
+			</div>
 
 		</div>
 
 	{/if}
 
-	<div class="space-y-8">
+	<div class="space-y-10">
 
-		{#each section.questions as question, index}
+		{#each section.questions ?? [] as question, index (question.id)}
 
 			<PreviewQuestion
 				{question}

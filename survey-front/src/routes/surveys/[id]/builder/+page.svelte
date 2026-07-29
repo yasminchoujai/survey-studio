@@ -16,7 +16,8 @@
 		updateQuestion,
 		deleteQuestion,
 		duplicateQuestion,
-		deleteSection
+		deleteSection,
+		publishSurvey
 	} = useSurveys();
 
 	let survey = $state(null);
@@ -139,12 +140,25 @@
 
 		selectedSectionId = section.id;
 	}
+
+	async function handlePublish() {
+		if (!survey) return;
+
+		try {
+			await publishSurvey(survey);
+		} catch (err) {
+			console.error('Failed to publish survey:', err);
+		}
+	}
 </script>
 
 {#if survey}
 	<div class="flex h-screen flex-col bg-slate-50">
 
-		<BuilderHeader {survey} />
+		<BuilderHeader
+			{survey}
+			onPublish={handlePublish}
+		/>
 
 		<div class="flex flex-1 overflow-hidden">
 
