@@ -1,342 +1,355 @@
-	import { browser } from '$app/environment';
+import { browser } from '$app/environment';
 
-	import {
-		getSurveys,
-		getSurvey as fetchSurvey,
-		createSurvey,
-		deleteSurvey as removeSurvey,
-		publishSurvey as publishSurveyApi
-	} from '$lib/api/surveys';
+import {
+	getSurveys,
+	getSurvey as fetchSurvey,
+	createSurvey,
+	deleteSurvey as removeSurvey,
+	publishSurvey as publishSurveyApi
+} from '$lib/api/surveys';
 
-	import {
-		getSections,
-		createSection,
-		updateSection as updateSectionApi,
-		deleteSection as deleteSectionApi
-	} from '$lib/api/sections';
+import {
+	getSections,
+	createSection,
+	updateSection as updateSectionApi,
+	deleteSection as deleteSectionApi
+} from '$lib/api/sections';
 
-	import {
-		getQuestions,
-		createQuestion,
-		updateQuestion as updateQuestionApi,
-		deleteQuestion as deleteQuestionApi
-	} from '$lib/api/questions';
+import {
+	getQuestions,
+	createQuestion,
+	updateQuestion as updateQuestionApi,
+	deleteQuestion as deleteQuestionApi
+} from '$lib/api/questions';
 
-	import {
-		getResponses as fetchResponses
-	} from '$lib/api/responses';
+import { getResponses as fetchResponses } from '$lib/api/responses';
 
-	let surveys = $state([]);
+let surveys = $state([]);
 
-	function save() {}
+function save() {}
 
-	async function load() {
-		if (!browser) return;
+async function load() {
+	if (!browser) return;
 
-		const data = await getSurveys();
+	const data = await getSurveys();
 
-		surveys.splice(0, surveys.length);
+	surveys.splice(0, surveys.length);
 
-		surveys.push(
-			...data.map((survey) => ({
-				...survey,
-				status:
-					survey.status === 'published'
-						? 'Published'
-						: 'Draft',
-				responses: survey.responses ?? 0,
-				sections: [],
-				updatedAt: survey.updatedAt
-			}))
-		);
-	}
-
-	async function addSurvey(data) {
-		const survey = await createSurvey(data);
-
-		surveys.unshift({
+	for (const survey of data) {
+		surveys.push({
 			...survey,
 			status:
 				survey.status === 'published'
 					? 'Published'
 					: 'Draft',
-			responses: 0,
+			responses: survey.responses || 0,
 			sections: [],
 			updatedAt: survey.updatedAt
 		});
 	}
+}
 
-	async function deleteSurvey(id) {
-		await removeSurvey(id);
+async function addSurvey(data) {
+	const survey = await createSurvey(data);
 
-		const index = surveys.findIndex(
-			(survey) => survey.id === id
+	surveys.unshift({
+		...survey,
+		status:
+			survey.status === 'published'
+				? 'Published'
+				: 'Draft',
+		responses: 0,
+		sections: [],
+		updatedAt: survey.updatedAt
+	});
+}
+
+async function deleteSurvey(id) {
+	await removeSurvey(id);
+
+	const index = surveys.findIndex(
+		(survey) => survey.id === id
+	);
+
+	if (index > -1) {
+		surveys.splice(index, 1);
+	}
+}
+
+async function getSurvey(id) {
+	const survey = await fetchSurvey(id);
+
+	const sections = await getSections(id);
+
+	for (const section of sections) {
+		const questions = await getQuestions(
+			id,
+			section.id
 		);
 
-		if (index !== -1) {
-			surveys.splice(index, 1);
-		}
+		section.questions = questions;
 	}
 
-	async function getSurvey(id) {
-		const survey = await fetchSurvey(id);
+	return {
+		...survey,
+		status:
+			survey.status === 'published'
+				? 'Published'
+				: 'Draft',
+		responses: survey.responses || 0,
+		sections,
+		updatedAt: survey.updatedAt
+	};
+}
 
-		const sections = await getSections(id);
+/* ===========================
+   Builder
+=========================== */
 
-		for (const section of sections) {
-			section.questions = await getQuestions(
-				id,
-				section.id
-			);
-		}
+async function addSection(survey) {
+	const section = await createSection(
+		survey.id
+	);
 
-		return {
-			...survey,
-			status:
-				survey.status === 'published'
-					? 'Published'
-					: 'Draft',
-			responses: survey.responses ?? 0,
-			sections,
-			updatedAt: survey.updatedAt
-		};
+	survey.sections.push({
+		...section,
+		questions: []
+	});
+
+	return section;
+}
+
+async function updateSection(
+	survey,
+	updatedSection
+) {
+	const savedSection =
+		await updateSectionApi(
+			updatedSection.id,
+			updatedSection
+		);
+
+	const section = survey.sections.find(
+		(section) =>
+			section.id === savedSection.id
+	);
+
+	if (section) {
+		Object.assign(
+			section,
+			savedSection
+		);
 	}
 
-	/* ===========================
-	Builder
-	=========================== */
+	return savedSection;
+}
 
-	async function addSection(survey) {
-		const section = await createSection(survey.id);
+async function deleteSection(
+	survey,
+	sectionId
+) {
+	await deleteSectionApi(sectionId);
 
-		survey.sections.push({
-			...section,
-			questions: []
-		});
+	const index = survey.sections.findIndex(
+		(section) =>
+			section.id === sectionId
+	);
 
-		return section;
+	if (index > -1) {
+		survey.sections.splice(index, 1);
+	}
+}async function addQuestion(
+	survey,
+	sectionId,
+	question
+) {
+	const createdQuestion =
+		await createQuestion(
+			survey.id,
+			sectionId,
+			question
+		);
+
+	const section = survey.sections.find(
+		(section) =>
+			section.id === sectionId
+	);
+
+	if (!section) {
+		return;
 	}
 
-	async function updateSection(
-		survey,
-		updatedSection
-	) {
-		const savedSection =
-			await updateSectionApi(
-				updatedSection.id,
-				updatedSection
+	if (!section.questions) {
+		section.questions = [];
+	}
+
+	section.questions.push(createdQuestion);
+
+	return createdQuestion;
+}
+
+async function updateQuestion(
+	survey,
+	updatedQuestion
+) {
+	const savedQuestion =
+		await updateQuestionApi(
+			updatedQuestion.id,
+			updatedQuestion
+		);
+
+	for (const section of survey.sections) {
+		const question =
+			section.questions.find(
+				(question) =>
+					question.id === savedQuestion.id
 			);
 
-		const existing =
-			survey.sections.find(
-				(section) =>
-					section.id === savedSection.id
-			);
-
-		if (existing) {
+		if (question) {
 			Object.assign(
-				existing,
-				savedSection
-			);
-		}
-
-		return savedSection;
-	}
-
-	async function deleteSection(
-		survey,
-		sectionId
-	) {
-		await deleteSectionApi(sectionId);
-
-		const index = survey.sections.findIndex(
-			(section) => section.id === sectionId
-		);
-
-		if (index !== -1) {
-			survey.sections.splice(index, 1);
-		}
-	}
-
-	async function addQuestion(
-		survey,
-		sectionId,
-		question
-	) {
-		const createdQuestion =
-			await createQuestion(
-				survey.id,
-				sectionId,
-				question
-			);
-
-		const section = survey.sections.find(
-			(s) => s.id === sectionId
-		);
-
-		if (!section) return;
-
-		if (!section.questions) {
-			section.questions = [];
-		}
-
-		section.questions.push(createdQuestion);
-
-		return createdQuestion;
-	}
-
-	async function updateQuestion(
-		survey,
-		updatedQuestion
-	) {
-		const savedQuestion =
-			await updateQuestionApi(
-				updatedQuestion.id,
-				updatedQuestion
-			);
-
-		for (const section of survey.sections) {
-			const existing =
-				section.questions.find(
-					(q) => q.id === savedQuestion.id
-				);
-
-			if (!existing) continue;
-
-			Object.assign(
-				existing,
+				question,
 				savedQuestion
 			);
 
 			return savedQuestion;
 		}
-
-		return savedQuestion;
 	}
 
-	async function deleteQuestion(
-		survey,
-		questionId
-	) {
-		await deleteQuestionApi(questionId);
+	return savedQuestion;
+}
 
-		for (const section of survey.sections) {
-			const index =
-				section.questions.findIndex(
-					(question) =>
-						question.id === questionId
-				);
+async function deleteQuestion(
+	survey,
+	questionId
+) {
+	await deleteQuestionApi(questionId);
 
-			if (index !== -1) {
-				section.questions.splice(
-					index,
-					1
-				);
+	for (const section of survey.sections) {
+		const index =
+			section.questions.findIndex(
+				(question) =>
+					question.id === questionId
+			);
 
-				return;
-			}
+		if (index > -1) {
+			section.questions.splice(
+				index,
+				1
+			);
+
+			return;
 		}
 	}
+}
 
-	async function duplicateQuestion(
-		survey,
-		questionId
-	) {
-		for (const section of survey.sections) {
-			const question =
-				section.questions.find(
-					(q) => q.id === questionId
-				);
+function duplicateQuestion(
+	survey,
+	questionId
+) {
+	for (const section of survey.sections) {
+		const question =
+			section.questions.find(
+				(question) =>
+					question.id === questionId
+			);
 
-			if (!question) continue;
-
+		if (question) {
 			const copy = {
 				label: `${question.label} Copy`,
 				type: question.type,
 				description:
 					question.description,
-				required: question.required,
+				required:
+					question.required,
 				placeholder:
 					question.placeholder,
 				options: [
-					...(question.options ?? [])
+					...(question.options || [])
 				]
 			};
 
-			return await addQuestion(
+			return addQuestion(
 				survey,
 				section.id,
 				copy
 			);
 		}
 	}
+}
+/* ===========================
+   Publish
+=========================== */
 
-	async function publishSurvey(survey) {
-		const updatedSurvey =
-			await publishSurveyApi(survey.id);
+async function publishSurvey(survey) {
+	const updatedSurvey =
+		await publishSurveyApi(survey.id);
 
-		const status =
-			updatedSurvey.status === 'published'
-				? 'Published'
-				: 'Draft';
+	survey.status =
+		updatedSurvey.status === 'published'
+			? 'Published'
+			: 'Draft';
 
-		survey.status = status;
-		survey.updatedAt =
-			updatedSurvey.updatedAt;
+	survey.updatedAt =
+		updatedSurvey.updatedAt;
 
-		const existing = surveys.find(
-			(s) => s.id === survey.id
-		);
+	const surveyItem = surveys.find(
+		(item) => item.id === survey.id
+	);
 
-		if (existing) {
-			existing.status = status;
-			existing.updatedAt =
-				updatedSurvey.updatedAt;
-		}
-
-		return updatedSurvey;
+	if (surveyItem) {
+		surveyItem.status = survey.status;
+		surveyItem.updatedAt =
+			survey.updatedAt;
 	}
 
-	/* ===========================
-	Responses
-	=========================== */
+	return updatedSurvey;
+}
 
-	async function getResponses(surveyId) {
-		return await fetchResponses(surveyId);
-	}
+/* ===========================
+   Responses
+=========================== */
 
-	async function getSurveyWithResponses(
+function getResponses(surveyId) {
+	return fetchResponses(surveyId);
+}
+
+async function getSurveyWithResponses(
+	surveyId
+) {
+	const survey = await getSurvey(
 		surveyId
-	) {
-		const [survey, responses] =
-			await Promise.all([
-				getSurvey(surveyId),
-				fetchResponses(surveyId)
-			]);
+	);
 
-		return {
-			survey,
-			responses
-		};
-	}
+	const responses =
+		await fetchResponses(surveyId);
 
-	export function useSurveys() {
-		return {
-			surveys,
-			load,
-			save,
-			getSurvey,
-			addSurvey,
-			deleteSurvey,
-			addSection,
-			updateSection,
-			deleteSection,
-			addQuestion,
-			updateQuestion,
-			deleteQuestion,
-			duplicateQuestion,
-			publishSurvey,
-			getResponses,
-			getSurveyWithResponses
-		};
-	}
+	return {
+		survey,
+		responses
+	};
+}
+
+/* ===========================
+   Store
+=========================== */
+
+export function useSurveys() {
+	return {
+		surveys,
+		load,
+		save,
+		getSurvey,
+		addSurvey,
+		deleteSurvey,
+		addSection,
+		updateSection,
+		deleteSection,
+		addQuestion,
+		updateQuestion,
+		deleteQuestion,
+		duplicateQuestion,
+		publishSurvey,
+		getResponses,
+		getSurveyWithResponses
+	};
+}
