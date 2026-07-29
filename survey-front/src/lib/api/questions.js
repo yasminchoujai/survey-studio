@@ -1,78 +1,30 @@
-const API_URL = 'http://localhost:3000/api';
+import { request } from './http';
 
-export async function getQuestions(surveyId, sectionId) {
-	const response = await fetch(
-		`${API_URL}/surveys/${surveyId}/sections/${sectionId}/questions`
+export function getQuestions(surveyId, sectionId) {
+	return request(
+		`/surveys/${surveyId}/sections/${sectionId}/questions`
 	);
-
-	const result = await response.json();
-
-	if (!response.ok) {
-		throw new Error(result.message);
-	}
-
-	return result.data;
 }
 
-export async function createQuestion(
-	surveyId,
-	sectionId,
-	question
-) {
-	const response = await fetch(
-		`${API_URL}/surveys/${surveyId}/sections/${sectionId}/questions`,
+export function createQuestion(surveyId, sectionId, question) {
+	return request(
+		`/surveys/${surveyId}/sections/${sectionId}/questions`,
 		{
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
 			body: JSON.stringify(question)
 		}
 	);
-
-	const result = await response.json();
-
-	if (!response.ok) {
-		throw new Error(result.message);
-	}
-
-	return result.data;
 }
 
-export async function updateQuestion(id, question) {
-	const response = await fetch(
-		`${API_URL}/questions/${id}`,
-		{
-			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify(question)
-		}
-	);
-
-	const result = await response.json();
-
-	if (!response.ok) {
-		throw new Error(result.message);
-	}
-
-	return result.data;
+export function updateQuestion(id, question) {
+	return request(`/questions/${id}`, {
+		method: 'PUT',
+		body: JSON.stringify(question)
+	});
 }
 
-export async function deleteQuestion(id) {
-	const response = await fetch(
-		`${API_URL}/questions/${id}`,
-		{
-			method: 'DELETE'
-		}
-	);
-
-	const result = await response.json();
-
-	if (!response.ok) {
-		throw new Error(result.message);
-	}
-
-	return true;
+export function deleteQuestion(id) {
+	return request(`/questions/${id}`, {
+		method: 'DELETE'
+	});
 }
