@@ -11,11 +11,9 @@
 	}
 </script>
 
-<header class="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-5">
+<header class="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
 
-	<!-- Left -->
-
-	<div class="flex min-w-0 items-center gap-3">
+	<div class="flex items-center gap-4">
 
 		<Button
 			variant="ghost"
@@ -25,40 +23,26 @@
 			<ArrowLeft size={18} />
 		</Button>
 
-		<div class="flex min-w-0 items-center gap-3">
+		<div>
 
-			<h1 class="truncate text-sm font-medium text-slate-800">
+			<h1 class="text-lg font-semibold text-slate-900">
 				{survey.title}
 			</h1>
 
-			<div
-				class="flex shrink-0 items-center gap-1.5 rounded-full bg-violet-50 px-2 py-1 text-xs font-medium text-violet-700"
-			>
-				<span class="h-1.5 w-1.5 rounded-full bg-violet-500"></span>
-				Preview
-			</div>
-
-			<span class="hidden text-xs text-slate-500 sm:block">
-				• {survey.sections.length}
-				section{survey.sections.length !== 1 ? 's' : ''}
-			</span>
+			<p class="text-sm text-slate-500">
+				Survey Preview
+			</p>
 
 		</div>
 
 	</div>
 
-	<!-- Right -->
-
-	<div class="flex items-center gap-2">
-
-		<Button
-			variant="outline"
-			onclick={back}
-		>
-			<Pencil size={16} />
-			Back to Builder
-		</Button>
-
-	</div>
+	<Button
+		variant="outline"
+		onclick={back}
+	>
+		<Pencil size={16} />
+		Back to Builder
+	</Button>
 
 </header>

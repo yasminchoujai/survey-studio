@@ -4,28 +4,31 @@
 
 	let { question, number } = $props();
 
-	let rating = $state(0);
 	let selectedRadio = $state('');
 	let selectedCheckboxes = $state([]);
+	let rating = $state(0);
 </script>
 
-<div class="space-y-6">
+<div class="space-y-5 rounded-xl border border-slate-200 p-6">
+
 	<!-- Question -->
 
-	<div class="space-y-2">
-		<h3 class="text-lg font-semibold text-(--text-heading)">
+	<div>
+
+		<h3 class="text-lg font-semibold text-slate-900">
 			{number}. {question.label}
 
 			{#if question.required}
-				<span class="ml-1 text-red-500">*</span>
+				<span class="text-red-500">*</span>
 			{/if}
 		</h3>
 
 		{#if question.description}
-			<p class="text-sm leading-6 text-(--text-muted)">
+			<p class="mt-2 text-sm text-slate-500">
 				{question.description}
 			</p>
 		{/if}
+
 	</div>
 
 	<!-- Short Text -->
@@ -33,8 +36,7 @@
 	{#if question.type === 'short_text'}
 
 		<Input
-			class="h-12"
-			placeholder={question.placeholder || 'Type your answer...'}
+			placeholder={question.placeholder || 'Type your answer'}
 		/>
 
 	<!-- Email -->
@@ -43,7 +45,6 @@
 
 		<Input
 			type="email"
-			class="h-12"
 			placeholder={question.placeholder || 'name@example.com'}
 		/>
 
@@ -52,8 +53,8 @@
 	{:else if question.type === 'long_text'}
 
 		<Textarea
-			rows="5"
-			placeholder={question.placeholder || 'Write your answer...'}
+			rows={5}
+			placeholder={question.placeholder || 'Write your answer'}
 		/>
 
 	<!-- Single Choice -->
@@ -65,11 +66,7 @@
 			{#each question.options ?? [] as option}
 
 				<label
-					class="flex cursor-pointer items-center gap-4 rounded-2xl border px-5 py-4 transition-all duration-200 hover:border-(--primary) hover:bg-[#FCFBFE]"
-					class:border-(--primary)={selectedRadio === option}
-					class:bg-[#F8F3FD]={selectedRadio === option}
-					class:border-(--border)={selectedRadio !== option}
-					class:bg-(--surface)={selectedRadio !== option}
+					class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-4 transition hover:border-violet-500"
 				>
 
 					<input
@@ -77,22 +74,13 @@
 						name={question.id}
 						value={option}
 						bind:group={selectedRadio}
-						class="sr-only"
+						class="h-5 w-5 accent-violet-600"
 					/>
 
-					<div
-						class="flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all"
-						class:border-(--primary)={selectedRadio === option}
-						class:border-slate-300={selectedRadio !== option}
+					<span
+						class:text-violet-700={selectedRadio === option}
+						class:font-semibold={selectedRadio === option}
 					>
-
-						{#if selectedRadio === option}
-							<div class="h-3 w-3 rounded-full bg-(--primary)"></div>
-						{/if}
-
-					</div>
-
-					<span class="flex-1 text-base font-medium text-(--text-body)">
 						{option}
 					</span>
 
@@ -111,48 +99,20 @@
 			{#each question.options ?? [] as option}
 
 				<label
-					class="flex cursor-pointer items-center gap-4 rounded-2xl border px-5 py-4 transition-all duration-200 hover:border-(--primary) hover:bg-[#FCFBFE]"
-					class:border-(--primary)={selectedCheckboxes.includes(option)}
-					class:bg-[#F8F3FD]={selectedCheckboxes.includes(option)}
-					class:border-(--border)={!selectedCheckboxes.includes(option)}
-					class:bg-(--surface)={!selectedCheckboxes.includes(option)}
+					class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-4 transition hover:border-violet-500"
 				>
 
 					<input
 						type="checkbox"
 						value={option}
 						bind:group={selectedCheckboxes}
-						class="sr-only"
+						class="h-5 w-5 accent-violet-600"
 					/>
 
-					<div
-						class="flex h-6 w-6 items-center justify-center rounded-lg border-2 transition-all"
-						class:border-(--primary)={selectedCheckboxes.includes(option)}
-						class:bg-(--primary)={selectedCheckboxes.includes(option)}
-						class:border-slate-300={!selectedCheckboxes.includes(option)}
+					<span
+						class:text-violet-700={selectedCheckboxes.includes(option)}
+						class:font-semibold={selectedCheckboxes.includes(option)}
 					>
-
-						{#if selectedCheckboxes.includes(option)}
-
-							<svg
-								viewBox="0 0 24 24"
-								class="h-4 w-4 text-white"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="3"
-							>
-								<path
-									d="M5 13l4 4L19 7"
-									stroke-linecap="round"
-									stroke-linejoin="round"
-								/>
-							</svg>
-
-						{/if}
-
-					</div>
-
-					<span class="flex-1 text-base font-medium text-(--text-body)">
 						{option}
 					</span>
 
@@ -166,9 +126,9 @@
 
 	{:else if question.type === 'rating'}
 
-		<div class="flex flex-col items-center gap-5">
+		<div class="flex flex-col items-center gap-4">
 
-			<div class="flex gap-2">
+			<div class="flex gap-3">
 
 				{#each [1, 2, 3, 4, 5] as star}
 
@@ -192,13 +152,17 @@
 
 			</div>
 
-			<p class="text-sm font-medium text-(--primary-dark)">
-				{rating === 0
-					? 'Select a rating'
-					: `${rating} of 5 stars`}
+			<div class="flex w-full justify-between text-xs font-medium text-slate-500">
+				<span>Poor</span>
+				<span>Excellent</span>
+			</div>
+
+			<p class="text-sm font-medium text-violet-600">
+				{rating === 0 ? 'Select a rating' : `${rating} of 5`}
 			</p>
 
 		</div>
 
 	{/if}
+
 </div>
