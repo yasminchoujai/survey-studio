@@ -1,10 +1,14 @@
 <script>
   import { goto } from "$app/navigation";
   import { Pencil, Trash2, Eye, BarChart3, Copy, Check } from "lucide-svelte";
+  import ConfirmModal from "$lib/components/ui/ConfirmModal.svelte";
 
   let copied = $state(false);
 
   let { survey, deleteSurvey } = $props();
+
+  let showDeleteModal = $state(false);
+  let deleting = $state(false);
 
   function edit() {
     goto(`/surveys/${survey.id}/builder`);
@@ -19,7 +23,21 @@
   }
 
   function remove() {
-    deleteSurvey(survey.id);
+    showDeleteModal = true;
+  }
+
+  function cancelDelete() {
+    showDeleteModal = false;
+  }
+
+  async function confirmDelete() {
+    try {
+      deleting = true;
+      await deleteSurvey(survey.id);
+      showDeleteModal = false;
+    } finally {
+      deleting = false;
+    }
   }
 
   async function copyLink() {
@@ -86,4 +104,15 @@
   >
     <Trash2 size={18} />
   </button>
+
+  <ConfirmModal
+    open={showDeleteModal}
+    title="Delete Survey"
+    message={`Are you sure you want to delete "${survey.title}"?.`}
+    confirmText="Delete"
+    cancelText="Cancel"
+    loading={deleting}
+    onConfirm={confirmDelete}
+    onCancel={cancelDelete}
+  />
 </div>

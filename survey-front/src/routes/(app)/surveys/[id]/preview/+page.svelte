@@ -11,17 +11,15 @@
 
 	const { getSurvey } = useSurveys();
 
-	let survey = $state(null);
-	let loading = $state(true);
+	let survey = $state(page.state?.survey ?? null);
+	let loading = $state(!survey);
 	let error = $state('');
 
 	onMount(async () => {
+		if (survey) return;
+
 		try {
-			const data = await getSurvey(page.params.id);
-
-			console.log('Survey:', data);
-
-			survey = data;
+			survey = await getSurvey(page.params.id);
 		} catch (err) {
 			console.error(err);
 			error = err?.message ?? 'Failed to load survey.';

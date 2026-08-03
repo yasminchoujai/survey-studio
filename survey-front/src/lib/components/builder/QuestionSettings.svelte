@@ -17,14 +17,6 @@
 	} = $props();
 
 
-	async function save() {
-		if (!question) return;
-
-		await updateQuestion({
-			...question,
-			options: [...(question.options ?? [])]
-		});
-	}
 
 
 	function addOption() {
@@ -80,16 +72,6 @@
 				Edit question
 			</p>
 		</div>
-
-
-		<Button
-			size="sm"
-			onclick={save}
-		>
-			Save
-		</Button>
-
-
 	</div>
 
 
