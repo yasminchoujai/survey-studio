@@ -1,184 +1,199 @@
 <script>
-  import { onMount } from "svelte";
-  import { page } from "$app/state";
-  import { goto } from "$app/navigation";
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 
-  import { useSurveys } from "$lib/stores/surveys.svelte.js";
+	import { useSurveys } from '$lib/stores/surveys.svelte.js';
 
-  import BuilderHeader from "$lib/components/builder/BuilderHeader.svelte";
-  import QuestionTypePicker from "$lib/components/builder/QuestionTypePicker.svelte";
-  import BuilderCanvas from "$lib/components/builder/BuilderCanvas.svelte";
-  import QuestionSettings from "$lib/components/builder/QuestionSettings.svelte";
+	import BuilderHeader from '$lib/components/builder/BuilderHeader.svelte';
+	import QuestionTypePicker from '$lib/components/builder/QuestionTypePicker.svelte';
+	import BuilderCanvas from '$lib/components/builder/BuilderCanvas.svelte';
+	import QuestionSettings from '$lib/components/builder/QuestionSettings.svelte';
 
-  const {
-    getSurvey,
-    addQuestion,
-    addSection,
-    updateQuestion,
-    deleteQuestion,
-    duplicateQuestion,
-    deleteSection,
-    publishSurvey,
-    saveAllQuestions,
-  } = useSurveys();
+	const {
+		getSurvey,
+		addQuestion,
+		addSection,
+		updateQuestion,
+		deleteQuestion,
+		duplicateQuestion,
+		deleteSection,
+		reorderSectionQuestions,
+		publishSurvey,
+		saveAllQuestions
+	} = useSurveys();
 
-  let survey = $state(null);
+	let survey = $state(null);
+	let selectedQuestion = $state(null);
+	let selectedSectionId = $state(null);
 
-  let selectedQuestion = $state(null);
+	let publishing = $state(false);
+	let publishError = $state('');
 
-  let selectedSectionId = $state(null);
+	onMount(async () => {
+		survey = await getSurvey(page.params.id);
 
-  let publishing = $state(false);
-  let publishError = $state("");
+		if (survey?.sections?.length) {
+			selectedSectionId = survey.sections[0].id;
+		}
+	});
 
-  onMount(async () => {
-    survey = await getSurvey(page.params.id);
+	function selectSection(sectionId) {
+		selectedSectionId = sectionId;
+	}
 
-    if (survey?.sections?.length) {
-      selectedSectionId = survey.sections[0].id;
-    }
-  });
+	function selectQuestion(question) {
+		selectedQuestion = question;
+	}
 
-  function selectSection(sectionId) {
-    selectedSectionId = sectionId;
-  }
+	async function handleAddQuestion(sectionId, type) {
+		if (!survey) return;
 
-  function selectQuestion(question) {
-    selectedQuestion = question;
-  }
+		const question = {
+			label: 'Untitled question',
+			type,
+			description: '',
+			required: false,
+			placeholder: '',
+			options:
+				type === 'single_choice' || type === 'multiple_choice'
+					? ['Option 1', 'Option 2']
+					: []
+		};
 
-  async function handleAddQuestion(sectionId, type) {
-    if (!survey) return;
+		const created = await addQuestion(
+			survey,
+			sectionId,
+			question
+		);
 
-    const question = {
-      label: "Untitled question",
-      type,
-      description: "",
-      required: false,
-      placeholder: "",
-      options:
-        type === "single_choice" || type === "multiple_choice"
-          ? ["Option 1", "Option 2"]
-          : [],
-    };
+		selectedQuestion = created;
+	}
 
-    const created = await addQuestion(survey, sectionId, question);
+	async function handleUpdateQuestion(question) {
+		if (!survey) return;
 
-    selectedQuestion = created;
-  }
+		await updateQuestion(survey, question);
 
-  async function handleUpdateQuestion(question) {
-    if (!survey) return;
+		selectedQuestion = question;
+	}
 
-    await updateQuestion(survey, question);
+	async function handleDeleteQuestion(questionId) {
+		if (!survey) return;
 
-    selectedQuestion = question;
-  }
+		await deleteQuestion(survey, questionId);
 
-  async function handleDeleteQuestion(questionId) {
-    if (!survey) return;
+		if (selectedQuestion?.id === questionId) {
+			selectedQuestion = null;
+		}
+	}
 
-    await deleteQuestion(survey, questionId);
+	async function handleDuplicateQuestion(questionId) {
+		if (!survey) return;
 
-    if (selectedQuestion?.id === questionId) {
-      selectedQuestion = null;
-    }
-  }
+		const duplicated = await duplicateQuestion(
+			survey,
+			questionId
+		);
 
-  async function handleDuplicateQuestion(questionId) {
-    if (!survey) return;
+		if (duplicated) {
+			selectedQuestion = duplicated;
+		}
+	}
 
-    const duplicated = await duplicateQuestion(survey, questionId);
+	async function handleDeleteSection(sectionId) {
+		if (!survey) return;
 
-    if (duplicated) {
-      selectedQuestion = duplicated;
-    }
-  }
+		await deleteSection(survey, sectionId);
 
-  async function handleDeleteSection(sectionId) {
-    if (!survey) return;
+		if (selectedSectionId === sectionId) {
+			selectedSectionId =
+				survey.sections[0]?.id ?? null;
+		}
 
-    await deleteSection(survey, sectionId);
+		if (
+			selectedQuestion &&
+			!survey.sections.some((section) =>
+				section.questions.some(
+					(question) =>
+						question.id === selectedQuestion.id
+				)
+			)
+		) {
+			selectedQuestion = null;
+		}
+	}
 
-    if (selectedSectionId === sectionId) {
-      selectedSectionId = survey.sections[0]?.id ?? null;
-    }
+	async function handleAddSection() {
+		if (!survey) return;
 
-    if (
-      selectedQuestion &&
-      !survey.sections.some((section) =>
-        section.questions.some(
-          (question) => question.id === selectedQuestion.id,
-        ),
-      )
-    ) {
-      selectedQuestion = null;
-    }
-  }
+		const section = await addSection(survey);
 
-  async function handleAddSection() {
-    if (!survey) return;
+		selectedSectionId = section.id;
+	}
 
-    const section = await addSection(survey);
+	async function handlePublish() {
+		if (!survey) return;
 
-    selectedSectionId = section.id;
-  }
+		publishing = true;
+		publishError = '';
 
-  async function handlePublish() {
-    if (!survey) return;
+		try {
+			await saveAllQuestions(survey);
 
-    publishing = true;
-    publishError = "";
+			if (survey.status !== 'Published') {
+				await publishSurvey(survey);
+			}
 
-    try {
-      await saveAllQuestions(survey);
-
-      if (survey.status !== "Published") {
-        await publishSurvey(survey);
-      }
-
-      goto("/dashboard");
-    } catch (err) {
-      console.error("Failed to save survey:", err);
-      publishError = err?.message ?? "Failed to save survey.";
-    } finally {
-      publishing = false;
-    }
-  }
+			goto('/dashboard');
+		} catch (err) {
+			console.error(err);
+			publishError =
+				err?.message ??
+				'Failed to save survey.';
+		} finally {
+			publishing = false;
+		}
+	}
 </script>
 
 {#if survey}
-  <div class="flex h-screen flex-col bg-slate-50">
-    <BuilderHeader {survey} onPublish={handlePublish} {publishing} />
+	<div class="flex h-screen flex-col bg-slate-50">
+		<BuilderHeader
+			{survey}
+			onPublish={handlePublish}
+			{publishing}
+		/>
 
-    {#if publishError}
-      <div
-        class="border-b border-red-100 bg-red-50 px-5 py-2 text-sm text-red-600"
-      >
-        {publishError}
-      </div>
-    {/if}
+		{#if publishError}
+			<div
+				class="border-b border-red-100 bg-red-50 px-5 py-2 text-sm text-red-600"
+			>
+				{publishError}
+			</div>
+		{/if}
 
-    <div class="flex flex-1 overflow-hidden">
-      <QuestionTypePicker
-        sectionId={selectedSectionId}
-        onAddQuestion={handleAddQuestion}
-      />
+		<div class="flex flex-1 overflow-hidden">
+			<QuestionTypePicker
+				sectionId={selectedSectionId}
+				onAddQuestion={handleAddQuestion}
+			/>
 
-      <BuilderCanvas
-        {survey}
-        {selectQuestion}
-        {selectSection}
-        addSection={handleAddSection}
-        deleteSection={handleDeleteSection}
-        deleteQuestion={handleDeleteQuestion}
-        duplicateQuestion={handleDuplicateQuestion}
-      />
+			<BuilderCanvas
+				{survey}
+				{selectQuestion}
+				{selectSection}
+				addSection={handleAddSection}
+				deleteSection={handleDeleteSection}
+				deleteQuestion={handleDeleteQuestion}
+				duplicateQuestion={handleDuplicateQuestion}
+				reorderSectionQuestions={reorderSectionQuestions}
+			/>
 
-      <QuestionSettings
-        question={selectedQuestion}
-        updateQuestion={handleUpdateQuestion}
-      />
-    </div>
-  </div>
+			<QuestionSettings
+				question={selectedQuestion}
+				updateQuestion={handleUpdateQuestion}
+			/>
+		</div>
+	</div>
 {/if}
