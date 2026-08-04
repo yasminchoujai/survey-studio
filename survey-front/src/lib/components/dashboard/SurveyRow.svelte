@@ -42,11 +42,11 @@
     <StatusBadge status={survey.status} />
   </td>
 
-  <td class="px-6 py-6 font-medium text-slate-700">
+  <td class="px-23 py-6 font-medium text-slate-700">
     {survey.responses ?? 0}
   </td>
 
-  <td class="px-6 py-6 text-slate-500">
+  <td class="px-10 py-6 text-slate-500">
     {formatDate(survey.updatedAt)}
   </td>
 

@@ -28,3 +28,17 @@ export function deleteQuestion(id) {
 		method: 'DELETE'
 	});
 }
+
+/**
+
+ * PATCH /surveys/:surveyId/sections/:sectionId/questions/reorder
+ */
+export function reorderQuestions(surveyId, sectionId, order) {
+	return request(
+		`/surveys/${surveyId}/sections/${sectionId}/questions/reorder`,
+		{
+			method: 'PATCH',
+			body: JSON.stringify({ order })
+		}
+	);
+}
