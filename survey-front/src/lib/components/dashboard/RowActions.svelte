@@ -3,6 +3,10 @@
   import { Pencil, Trash2, Eye, BarChart3, Copy, Check } from "lucide-svelte";
   import ConfirmModal from "$lib/components/ui/ConfirmModal.svelte";
 
+  import { useToast } from '$lib/stores/toast.svelte.js';
+
+  const toast = useToast();
+
   let copied = $state(false);
 
   let { survey, deleteSurvey } = $props();
@@ -35,6 +39,10 @@
       deleting = true;
       await deleteSurvey(survey.id);
       showDeleteModal = false;
+      toast.success('Survey deleted');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to delete survey');
     } finally {
       deleting = false;
     }
@@ -47,12 +55,14 @@
       await navigator.clipboard.writeText(url);
 
       copied = true;
+      toast.success('Link copied to clipboard');
 
       setTimeout(() => {
         copied = false;
       }, 2000);
     } catch (error) {
       console.error(error);
+      toast.error('Failed to copy link');
     }
   }
 </script>

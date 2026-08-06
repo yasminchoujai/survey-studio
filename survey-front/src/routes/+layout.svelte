@@ -1,7 +1,7 @@
 <script>
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
-	import '@fontsource/inter';
+	import ToastContainer from '$lib/components/ui/ToastContainer.svelte';
 
 	let { children } = $props();
 </script>
@@ -11,3 +11,5 @@
 </svelte:head>
 
 {@render children()}
+
+<ToastContainer />
