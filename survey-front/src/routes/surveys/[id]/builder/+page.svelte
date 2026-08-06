@@ -5,6 +5,7 @@
 
 	import { useSurveys } from "$lib/stores/surveys.svelte.js";
 
+<<<<<<< HEAD:survey-front/src/routes/(app)/surveys/[id]/builder/+page.svelte
 	import LoadingState from "$lib/components/ui/LoadingState.svelte";
 	import ErrorState from "$lib/components/ui/ErrorState.svelte";
 
@@ -12,6 +13,14 @@
 	import QuestionTypePicker from "$lib/components/builder/QuestionTypePicker.svelte";
 	import BuilderCanvas from "$lib/components/builder/BuilderCanvas.svelte";
 	import QuestionSettings from "$lib/components/builder/QuestionSettings.svelte";
+=======
+	import { useToast } from '$lib/stores/toast.svelte.js';
+
+	import BuilderHeader from '$lib/components/builder/BuilderHeader.svelte';
+	import QuestionTypePicker from '$lib/components/builder/QuestionTypePicker.svelte';
+	import BuilderCanvas from '$lib/components/builder/BuilderCanvas.svelte';
+	import QuestionSettings from '$lib/components/builder/QuestionSettings.svelte';
+>>>>>>> origin/feature/toast-navigation-statistics:survey-front/src/routes/surveys/[id]/builder/+page.svelte
 
 	const {
 		getSurvey,
@@ -36,7 +45,13 @@
 	let publishing = $state(false);
 	let publishError = $state("");
 
+<<<<<<< HEAD:survey-front/src/routes/(app)/surveys/[id]/builder/+page.svelte
 	async function loadSurvey() {
+=======
+	const toast = useToast();
+
+	onMount(async () => {
+>>>>>>> origin/feature/toast-navigation-statistics:survey-front/src/routes/surveys/[id]/builder/+page.svelte
 		survey = await getSurvey(page.params.id);
 
 		if (survey?.sections?.length) {
@@ -134,9 +149,12 @@
 		publishing = true;
 		publishError = "";
 
+		const wasPublished = survey.status === 'Published';
+
 		try {
 			await saveAllQuestions(survey);
 
+<<<<<<< HEAD:survey-front/src/routes/(app)/surveys/[id]/builder/+page.svelte
 			if (survey.status !== "Published") {
 				await publishSurvey(survey);
 			}
@@ -144,10 +162,26 @@
 			goto("/dashboard");
 		} catch (err) {
 			publishError = err?.message ?? "Failed to publish survey.";
+=======
+			if (!wasPublished) {
+				await publishSurvey(survey);
+			}
+
+			toast.success(
+				wasPublished ? 'Survey updated successfully' : 'Survey published successfully'
+			);
+
+			goto('/dashboard');
+		} catch (err) {
+			console.error('Failed to save survey:', err);
+			publishError = err?.message ?? 'Failed to save survey.';
+			toast.error(publishError);
+>>>>>>> origin/feature/toast-navigation-statistics:survey-front/src/routes/surveys/[id]/builder/+page.svelte
 		} finally {
 			publishing = false;
 		}
 	}
+
 </script>
 
 {#if loading}

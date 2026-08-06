@@ -10,6 +10,9 @@
 	} from 'lucide-svelte';
 
 	import DeleteModal from '$lib/components/ui/DeleteModal.svelte';
+	import { useToast } from '$lib/stores/toast.svelte.js';
+
+	const toast = useToast();
 
 	let copied = $state(false);
 
@@ -18,25 +21,31 @@
 	let showDeleteModal = $state(false);
 	let deleting = $state(false);
 
+
 	function edit() {
 		goto(`/surveys/${survey.id}/builder`);
 	}
+
 
 	function preview() {
 		goto(`/surveys/${survey.id}/preview`);
 	}
 
+
 	function responses() {
 		goto(`/surveys/${survey.id}/responses`);
 	}
+
 
 	function remove() {
 		showDeleteModal = true;
 	}
 
+
 	function cancelDelete() {
 		showDeleteModal = false;
 	}
+
 
 	async function confirmDelete() {
 		try {
@@ -45,10 +54,19 @@
 			await deleteSurvey(survey.id);
 
 			showDeleteModal = false;
+
+			toast.success('Survey deleted');
+
+		} catch (err) {
+			console.error(err);
+
+			toast.error('Failed to delete survey');
+
 		} finally {
 			deleting = false;
 		}
 	}
+
 
 	async function copyLink() {
 		const url = `${window.location.origin}/public/${survey.id}`;
@@ -58,14 +76,20 @@
 
 			copied = true;
 
+			toast.success('Link copied to clipboard');
+
 			setTimeout(() => {
 				copied = false;
 			}, 2000);
+
 		} catch (error) {
 			console.error(error);
+
+			toast.error('Failed to copy link');
 		}
 	}
 </script>
+
 
 <div class="flex items-center justify-end">
 
@@ -83,6 +107,7 @@
 		</button>
 	{/if}
 
+
 	<button
 		onclick={edit}
 		class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors duration-200 hover:bg-violet-100 hover:text-violet-600"
@@ -90,6 +115,7 @@
 	>
 		<Pencil size={18} />
 	</button>
+
 
 	<button
 		onclick={preview}
@@ -99,6 +125,7 @@
 		<Eye size={18} />
 	</button>
 
+
 	<button
 		onclick={responses}
 		class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition-colors duration-200 hover:bg-emerald-100 hover:text-emerald-600"
@@ -107,7 +134,9 @@
 		<BarChart3 size={18} />
 	</button>
 
+
 	<div class="mx-2 h-5 w-px bg-slate-200"></div>
+
 
 	<button
 		onclick={remove}
@@ -116,6 +145,7 @@
 	>
 		<Trash2 size={18} />
 	</button>
+
 
 	<DeleteModal
 		open={showDeleteModal}
