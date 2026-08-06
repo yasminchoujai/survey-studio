@@ -25,6 +25,6 @@
 
 	<Plus size={16} />
 
-	Add Question
+	Add Section
 
 </Button>

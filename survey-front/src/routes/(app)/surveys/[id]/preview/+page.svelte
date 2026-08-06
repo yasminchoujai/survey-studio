@@ -23,6 +23,28 @@
 	let errors = $state({});
 
 
+	function initializeAnswers(data) {
+		const initial = {};
+
+		for (const section of data.sections ?? []) {
+			for (const question of section.questions ?? []) {
+
+				if (question.type === 'multiple_choice') {
+					initial[question.id] = [];
+
+				} else if (question.type === 'rating') {
+					initial[question.id] = 0;
+
+				} else {
+					initial[question.id] = '';
+				}
+			}
+		}
+
+		return initial;
+	}
+
+
 	async function loadSurvey() {
 		loading = true;
 		error = '';
@@ -30,24 +52,7 @@
 		try {
 			survey = await getSurvey(page.params.id);
 
-			const initial = {};
-
-			for (const section of survey.sections ?? []) {
-				for (const question of section.questions ?? []) {
-
-					if (question.type === 'multiple_choice') {
-						initial[question.id] = [];
-
-					} else if (question.type === 'rating') {
-						initial[question.id] = 0;
-
-					} else {
-						initial[question.id] = '';
-					}
-				}
-			}
-
-			answers = initial;
+			answers = initializeAnswers(survey);
 
 		} catch (err) {
 			error = err?.message ?? 'Failed to load survey.';
@@ -62,24 +67,7 @@
 
 		if (survey) {
 
-			const initial = {};
-
-			for (const section of survey.sections ?? []) {
-				for (const question of section.questions ?? []) {
-
-					if (question.type === 'multiple_choice') {
-						initial[question.id] = [];
-
-					} else if (question.type === 'rating') {
-						initial[question.id] = 0;
-
-					} else {
-						initial[question.id] = '';
-					}
-				}
-			}
-
-			answers = initial;
+			answers = initializeAnswers(survey);
 			loading = false;
 
 		} else {
@@ -123,9 +111,6 @@
 			<Card class="space-y-5">
 
 				<div class="flex items-center gap-3">
-
-					
-
 
 					<div>
 
@@ -171,12 +156,25 @@
 						</h2>
 
 
+
 						{#each section.questions as question}
 
 
 							<QuestionField
 								{question}
-								bind:value={answers[question.id]}
+								value={
+									answers[question.id] ??
+									(
+										question.type === 'multiple_choice'
+											? []
+											: question.type === 'rating'
+												? 0
+												: ''
+									)
+								}
+								onChange={(value) => {
+									answers[question.id] = value;
+								}}
 								error={errors[question.id]}
 							/>
 

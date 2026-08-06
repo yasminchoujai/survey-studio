@@ -1,22 +1,25 @@
 <script>
 	import { Copy, Trash2 } from 'lucide-svelte';
+
 	import Button from '$lib/components/ui/Button.svelte';
 	import DeleteModal from '$lib/components/ui/DeleteModal.svelte';
+
 
 	let {
 		question,
 		onSelect,
 		onDelete,
 		onDuplicate,
+
 		onDragStart,
 		onDrop,
-		onDragOver,
-
-		dragging = false,
-		dragOver = false
+		onDragOver
 	} = $props();
 
+
 	let showDeleteModal = $state(false);
+
+
 
 	const typeLabels = {
 		short_text: 'Short Text',
@@ -27,184 +30,305 @@
 		rating: 'Rating'
 	};
 
-	function duplicate(event) {
+
+
+	function duplicate(event){
 		event.stopPropagation();
+
 		onDuplicate?.(question.id);
 	}
 
-	function remove(event) {
+
+
+	function remove(event){
 		event.stopPropagation();
+
 		showDeleteModal = true;
 	}
 
-	function confirmDelete() {
+
+
+	function confirmDelete(){
+
 		onDelete?.(question.id);
+
 		showDeleteModal = false;
+
 	}
 
-	function cancelDelete() {
+
+
+	function cancelDelete(){
+
 		showDeleteModal = false;
+
 	}
+
 </script>
 
+
+
 <div
-	draggable="true"
 	role="button"
 	tabindex="0"
-	class={`group relative cursor-pointer rounded-2xl border bg-white p-5 transition-all duration-200
-	${dragging ? 'scale-[0.98] opacity-50' : ''}
-	${dragOver
-		? 'border-[#9B7EBD] shadow-lg'
-		: 'border-[#E8E2F2] hover:border-[#D4BEE4] hover:shadow-md'}`}
+	draggable="true"
 
-	ondragstart={(event) => {
+	class="group relative cursor-grab rounded-2xl border border-[#E8E2F2] bg-white p-5 transition-all duration-200 hover:border-[#D4BEE4] hover:shadow-md"
+
+
+
+	ondragstart={(event)=>{
+
 		event.stopPropagation();
 
 		event.dataTransfer.effectAllowed = 'move';
+
 
 		event.dataTransfer.setData(
 			'application/question-id',
 			question.id
 		);
 
+
 		event.dataTransfer.setData(
 			'text/plain',
 			question.id
 		);
 
-		onDragStart?.(question.id);
+
+		onDragStart?.(
+			question.id
+		);
+
 	}}
 
-	ondragenter={(event) => {
+
+
+	ondragover={(event)=>{
+
 		event.preventDefault();
+
 		event.stopPropagation();
 
-		onDragOver?.(question.id);
-	}}
-
-	ondragover={(event) => {
-		event.preventDefault();
-		event.stopPropagation();
 
 		event.dataTransfer.dropEffect = 'move';
 
-		onDragOver?.(question.id);
+
+		onDragOver?.(
+			question.id
+		);
+
 	}}
 
-	ondrop={(event) => {
+
+
+	ondrop={(event)=>{
+
 		event.preventDefault();
+
 		event.stopPropagation();
 
-		onDrop?.(event, question.id);
+
+		onDrop?.(
+			event,
+			question.id
+		);
+
 	}}
 
-	onclick={() => onSelect?.(question)}
 
-	onkeydown={(event) => {
-		if (event.key === 'Enter' || event.key === ' ') {
+
+	onclick={() =>
+		onSelect?.(question)
+	}
+
+
+
+	onkeydown={(event)=>{
+
+		if(
+			event.key === 'Enter' ||
+			event.key === ' '
+		){
+
 			event.preventDefault();
+
 			onSelect?.(question);
+
 		}
+
 	}}
 >
-	{#if dragOver}
-		<div
-			class="absolute -top-1 left-4 right-4 h-1 rounded-full bg-[#9B7EBD]"
-		></div>
-	{/if}
+
+
 
 	<div class="flex items-start justify-between gap-4">
+
+
 		<div class="flex-1">
+
+
 			<div class="flex flex-wrap items-center gap-2">
+
 				<span class="rounded-full bg-[#F3ECFA] px-3 py-1 text-xs font-medium text-[#3B1E54]">
+
 					{typeLabels[question.type]}
+
 				</span>
 
+
 				{#if question.required}
+
 					<span class="rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-600">
+
 						Required
+
 					</span>
+
 				{/if}
+
+
 			</div>
 
+
+
 			<h3 class="mt-4 text-lg font-semibold text-[#3B1E54]">
+
 				{question.label || 'Untitled Question'}
+
 			</h3>
 
+
+
 			{#if question.description}
-				<p class="mt-2 text-sm leading-6 text-slate-500">
+
+				<p class="mt-2 text-sm text-slate-500">
+
 					{question.description}
+
 				</p>
+
 			{/if}
+
+
 		</div>
+
+
+
 
 		<div class="flex gap-1">
+
+
 			<Button
 				variant="ghost"
 				size="icon"
-				class="text-slate-400 hover:bg-[#F3ECFA] hover:text-[#3B1E54]"
 				onclick={duplicate}
 			>
-				<Copy size={16} />
+
+				<Copy size={16}/>
+
 			</Button>
+
+
 
 			<Button
 				variant="ghost"
 				size="icon"
-				class="text-slate-400 hover:bg-red-50 hover:text-red-500"
+				class="hover:bg-red-50 hover:text-red-500"
 				onclick={remove}
 			>
-				<Trash2 size={16} />
+
+				<Trash2 size={16}/>
+
 			</Button>
+
+
 		</div>
+
+
 	</div>
 
+
+
+
 	<div class="mt-6 rounded-xl bg-[#FAF8FD] p-4">
+
+
 		{#if question.type === 'short_text' || question.type === 'email'}
 
 			<div class="rounded-lg border border-[#E8E2F2] bg-white px-4 py-3 text-sm text-slate-400">
+
 				{question.placeholder || 'Short answer'}
+
 			</div>
+
 
 		{:else if question.type === 'long_text'}
 
 			<div class="h-24 rounded-lg border border-[#E8E2F2] bg-white p-4 text-sm text-slate-400">
+
 				{question.placeholder || 'Long answer'}
+
 			</div>
+
 
 		{:else if question.type === 'single_choice'}
 
 			<div class="space-y-3">
+
 				{#each question.options ?? [] as option}
+
 					<div class="flex items-center gap-3">
+
 						<div class="h-4 w-4 rounded-full border-2 border-[#9B7EBD]"></div>
-						<span class="text-sm text-slate-600">{option}</span>
+
+						<span class="text-sm text-slate-600">
+							{option}
+						</span>
+
 					</div>
+
 				{/each}
+
 			</div>
+
 
 		{:else if question.type === 'multiple_choice'}
 
 			<div class="space-y-3">
+
 				{#each question.options ?? [] as option}
+
 					<div class="flex items-center gap-3">
+
 						<div class="h-4 w-4 rounded border-2 border-[#9B7EBD]"></div>
-						<span class="text-sm text-slate-600">{option}</span>
+
+						<span class="text-sm text-slate-600">
+							{option}
+						</span>
+
 					</div>
+
 				{/each}
+
 			</div>
+
 
 		{:else if question.type === 'rating'}
 
-			<div class="flex gap-2 text-2xl text-[#D4BEE4]">
-				{#each [1, 2, 3, 4, 5] as _}
-					<span>★</span>
-				{/each}
+			<div class="text-2xl text-[#D4BEE4]">
+				★★★★★
 			</div>
 
 		{/if}
+
+
 	</div>
+
+
 </div>
+
+
 
 <DeleteModal
 	open={showDeleteModal}

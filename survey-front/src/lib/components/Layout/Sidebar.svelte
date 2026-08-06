@@ -6,21 +6,28 @@
 </script>
 
 <aside class="flex h-screen w-64 flex-col border-r border-slate-200 bg-white">
-  <!-- Logo -->
+<!-- Logo -->
 
-  <div class="border-b border-slate-200 px-6 py-5">
-    <div class="flex items-center gap-3">
-      <div
-        class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D4BEE4]"
-      >
-        <span class="text-sm font-semibold text-[#3B1E54]"> S </span>
-      </div>
+<div class="border-b border-slate-200 px-4 py-10">
 
-      <h1 class="text-[15px] font-semibold tracking-tight text-slate-800">
-        Survey Studio
-      </h1>
-    </div>
-  </div>
+	<div class="flex flex-col items-center gap-1">
+
+		<div
+			class="flex h-7 w-7 items-center justify-center rounded-lg bg-[#D4BEE4]"
+		>
+			<span class="text-xs font-bold text-[#3B1E54]">
+				S
+			</span>
+		</div>
+
+
+		<p class="text-[10px] font-semibold tracking-tight text-[#3B1E54]">
+			Survey Studio
+		</p>
+
+	</div>
+
+</div>
 
   <!-- Navigation -->
 

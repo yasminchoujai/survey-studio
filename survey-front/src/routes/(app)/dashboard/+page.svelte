@@ -75,7 +75,7 @@
 
 <div class="mx-auto max-w-7xl space-y-5">
 
-	<div class="flex items-end justify-between">
+	<div class="flex items-end justify-between py-6">
 		<div>
 			<h1 class="text-3xl font-bold tracking-tight text-[#3B1E54]">
 				Survey Dashboard

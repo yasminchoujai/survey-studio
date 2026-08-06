@@ -4,8 +4,8 @@
 	import { goto } from "$app/navigation";
 
 	import { useSurveys } from "$lib/stores/surveys.svelte.js";
+	import { useToast } from "$lib/stores/toast.svelte.js";
 
-<<<<<<< HEAD:survey-front/src/routes/(app)/surveys/[id]/builder/+page.svelte
 	import LoadingState from "$lib/components/ui/LoadingState.svelte";
 	import ErrorState from "$lib/components/ui/ErrorState.svelte";
 
@@ -13,14 +13,10 @@
 	import QuestionTypePicker from "$lib/components/builder/QuestionTypePicker.svelte";
 	import BuilderCanvas from "$lib/components/builder/BuilderCanvas.svelte";
 	import QuestionSettings from "$lib/components/builder/QuestionSettings.svelte";
-=======
-	import { useToast } from '$lib/stores/toast.svelte.js';
 
-	import BuilderHeader from '$lib/components/builder/BuilderHeader.svelte';
-	import QuestionTypePicker from '$lib/components/builder/QuestionTypePicker.svelte';
-	import BuilderCanvas from '$lib/components/builder/BuilderCanvas.svelte';
-	import QuestionSettings from '$lib/components/builder/QuestionSettings.svelte';
->>>>>>> origin/feature/toast-navigation-statistics:survey-front/src/routes/surveys/[id]/builder/+page.svelte
+
+	const toast = useToast();
+
 
 	const {
 		getSurvey,
@@ -37,6 +33,7 @@
 		error
 	} = useSurveys();
 
+
 	let survey = $state(null);
 
 	let selectedQuestion = $state(null);
@@ -45,32 +42,43 @@
 	let publishing = $state(false);
 	let publishError = $state("");
 
-<<<<<<< HEAD:survey-front/src/routes/(app)/surveys/[id]/builder/+page.svelte
+
 	async function loadSurvey() {
-=======
-	const toast = useToast();
 
-	onMount(async () => {
->>>>>>> origin/feature/toast-navigation-statistics:survey-front/src/routes/surveys/[id]/builder/+page.svelte
-		survey = await getSurvey(page.params.id);
+		try {
 
-		if (survey?.sections?.length) {
-			selectedSectionId = survey.sections[0].id;
+			survey = await getSurvey(page.params.id);
+
+			if (survey?.sections?.length) {
+				selectedSectionId = survey.sections[0].id;
+			}
+
+		} catch (err) {
+			console.error(err);
 		}
 	}
 
+
 	onMount(loadSurvey);
+
+
 
 	function selectSection(sectionId) {
 		selectedSectionId = sectionId;
 	}
 
+
+
 	function selectQuestion(question) {
 		selectedQuestion = question;
 	}
 
+
+
 	async function handleAddQuestion(sectionId, type) {
+
 		if (!survey) return;
+
 
 		const question = {
 			label: "Untitled question",
@@ -85,104 +93,183 @@
 					: []
 		};
 
-		selectedQuestion = await addQuestion(survey, sectionId, question);
+
+		selectedQuestion = await addQuestion(
+			survey,
+			sectionId,
+			question
+		);
 	}
 
+
+
 	async function handleUpdateQuestion(question) {
+
 		if (!survey) return;
 
-		await updateQuestion(survey, question);
+
+		await updateQuestion(
+			survey,
+			question
+		);
+
+
 		selectedQuestion = question;
 	}
 
+
+
 	async function handleDeleteQuestion(questionId) {
+
 		if (!survey) return;
 
-		await deleteQuestion(survey, questionId);
+
+		await deleteQuestion(
+			survey,
+			questionId
+		);
+
 
 		if (selectedQuestion?.id === questionId) {
 			selectedQuestion = null;
 		}
 	}
 
+
+
 	async function handleDuplicateQuestion(questionId) {
+
 		if (!survey) return;
 
-		const duplicated = await duplicateQuestion(survey, questionId);
+
+		const duplicated = await duplicateQuestion(
+			survey,
+			questionId
+		);
+
 
 		if (duplicated) {
 			selectedQuestion = duplicated;
 		}
 	}
 
+
+
 	async function handleDeleteSection(sectionId) {
+
 		if (!survey) return;
 
-		await deleteSection(survey, sectionId);
+
+		await deleteSection(
+			survey,
+			sectionId
+		);
+
 
 		if (selectedSectionId === sectionId) {
-			selectedSectionId = survey.sections[0]?.id ?? null;
+			selectedSectionId =
+				survey.sections[0]?.id ?? null;
 		}
+
 
 		if (
 			selectedQuestion &&
 			!survey.sections.some(section =>
 				section.questions.some(
-					question => question.id === selectedQuestion.id
+					question =>
+						question.id === selectedQuestion.id
 				)
 			)
 		) {
+
 			selectedQuestion = null;
+
 		}
 	}
 
+
+
 	async function handleAddSection() {
+
 		if (!survey) return;
 
-		const section = await addSection(survey);
+
+		const section = await addSection(
+			survey
+		);
+
+
 		selectedSectionId = section.id;
 	}
 
+
+
 	async function handlePublish() {
+
 		if (!survey) return;
+
 
 		publishing = true;
 		publishError = "";
 
-		const wasPublished = survey.status === 'Published';
+
+		const wasPublished =
+			survey.status === "Published";
+
 
 		try {
-			await saveAllQuestions(survey);
 
-<<<<<<< HEAD:survey-front/src/routes/(app)/surveys/[id]/builder/+page.svelte
-			if (survey.status !== "Published") {
-				await publishSurvey(survey);
-			}
-
-			goto("/dashboard");
-		} catch (err) {
-			publishError = err?.message ?? "Failed to publish survey.";
-=======
-			if (!wasPublished) {
-				await publishSurvey(survey);
-			}
-
-			toast.success(
-				wasPublished ? 'Survey updated successfully' : 'Survey published successfully'
+			await saveAllQuestions(
+				survey
 			);
 
-			goto('/dashboard');
+
+			if (!wasPublished) {
+
+				await publishSurvey(
+					survey
+				);
+
+			}
+
+
+			toast.success(
+				wasPublished
+					? "Survey updated successfully"
+					: "Survey published successfully"
+			);
+
+
+			goto("/dashboard");
+
+
 		} catch (err) {
-			console.error('Failed to save survey:', err);
-			publishError = err?.message ?? 'Failed to save survey.';
-			toast.error(publishError);
->>>>>>> origin/feature/toast-navigation-statistics:survey-front/src/routes/surveys/[id]/builder/+page.svelte
+
+			console.error(
+				"Failed to save survey:",
+				err
+			);
+
+
+			publishError =
+				err?.message ??
+				"Failed to save survey.";
+
+
+			toast.error(
+				publishError
+			);
+
+
 		} finally {
+
 			publishing = false;
+
 		}
 	}
 
 </script>
+
 
 {#if loading}
 
@@ -192,7 +279,9 @@
 		description="Preparing the builder."
 	/>
 
+
 {:else if error}
+
 
 	<ErrorState
 		title="Couldn't load survey"
@@ -201,28 +290,50 @@
 		onRetry={loadSurvey}
 	/>
 
+
 {:else if survey}
 
+
 	<div class="flex h-screen flex-col bg-slate-50">
+
 
 		<BuilderHeader
 			{survey}
 			onPublish={handlePublish}
 			{publishing}
-		/>
+		>
+
+
+
+		</BuilderHeader>
+
+
 
 		{#if publishError}
-			<div class="border-b border-red-100 bg-red-50 px-5 py-2 text-sm text-red-600">
+
+			<div
+				class="border-b border-red-100 bg-red-50 px-5 py-2 text-sm text-red-600"
+			>
 				{publishError}
 			</div>
+
 		{/if}
 
+
+
 		<div class="flex flex-1 overflow-hidden">
+
 
 			<QuestionTypePicker
 				sectionId={selectedSectionId}
 				onAddQuestion={handleAddQuestion}
-			/>
+			>
+
+
+
+			</QuestionTypePicker>
+
+
 
 			<BuilderCanvas
 				{survey}
@@ -236,13 +347,18 @@
 				onAddQuestion={handleAddQuestion}
 			/>
 
+
+
 			<QuestionSettings
 				question={selectedQuestion}
 				updateQuestion={handleUpdateQuestion}
 			/>
 
+
 		</div>
 
+
 	</div>
+
 
 {/if}

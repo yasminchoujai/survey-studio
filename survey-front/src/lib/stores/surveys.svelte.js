@@ -111,26 +111,28 @@ async function load() {
 
 	// 3. Add the new surveys to the array
 	//    .push() adds items, ...data.map() transforms each survey
-	surveys.push(
-		...data.map((survey) => ({
-			...survey,  // Spread all original survey properties
+	const sortedSurveys = data.sort(
+	(a, b) =>
+		new Date(b.updatedAt) - new Date(a.updatedAt)
+);
 
-			// Convert backend status (string) to frontend display format
-			status:
-				survey.status === "published"
-					? "Published"   // If backend says "published", show "Published"
-					: "Draft",      // Otherwise show "Draft"
 
-			// Set default response count (0 if not provided)
-			responses: survey.responses ?? 0,
+surveys.push(
+	...sortedSurveys.map((survey) => ({
+		...survey,
 
-			// Sections are loaded later when viewing a single survey
-			sections: [],
+		status:
+			survey.status === "published"
+				? "Published"
+				: "Draft",
 
-			// Keep the update timestamp
-			updatedAt: survey.updatedAt,
-		}))
-	);
+		responses: survey.responses ?? 0,
+
+		sections: [],
+
+		updatedAt: survey.updatedAt,
+	}))
+);
 }
 
 /*
