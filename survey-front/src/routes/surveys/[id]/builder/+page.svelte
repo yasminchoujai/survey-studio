@@ -5,6 +5,8 @@
 
 	import { useSurveys } from '$lib/stores/surveys.svelte.js';
 
+	import { useToast } from '$lib/stores/toast.svelte.js';
+
 	import BuilderHeader from '$lib/components/builder/BuilderHeader.svelte';
 	import QuestionTypePicker from '$lib/components/builder/QuestionTypePicker.svelte';
 	import BuilderCanvas from '$lib/components/builder/BuilderCanvas.svelte';
@@ -29,6 +31,8 @@
 
 	let publishing = $state(false);
 	let publishError = $state('');
+
+	const toast = useToast();
 
 	onMount(async () => {
 		survey = await getSurvey(page.params.id);
@@ -138,23 +142,29 @@
 		publishing = true;
 		publishError = '';
 
+		const wasPublished = survey.status === 'Published';
+
 		try {
 			await saveAllQuestions(survey);
 
-			if (survey.status !== 'Published') {
+			if (!wasPublished) {
 				await publishSurvey(survey);
 			}
 
+			toast.success(
+				wasPublished ? 'Survey updated successfully' : 'Survey published successfully'
+			);
+
 			goto('/dashboard');
 		} catch (err) {
-			console.error(err);
-			publishError =
-				err?.message ??
-				'Failed to save survey.';
+			console.error('Failed to save survey:', err);
+			publishError = err?.message ?? 'Failed to save survey.';
+			toast.error(publishError);
 		} finally {
 			publishing = false;
 		}
 	}
+
 </script>
 
 {#if survey}
