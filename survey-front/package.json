@@ -20,6 +20,7 @@
 	},
 	"dependencies": {
 		"@fontsource/inter": "^5.3.0",
+		"apexcharts": "^6.7.0",
 		"lucide-svelte": "^1.0.1"
 	}
 }
