@@ -8,45 +8,30 @@
 		addSurvey
 	} = $props();
 
-
 	let title = $state('');
 	let description = $state('');
 	let loading = $state(false);
 
-
 	async function createSurvey() {
-
 		if (!title.trim()) return;
 
 		loading = true;
 
 		try {
-
 			await addSurvey({
 				title: title.trim(),
 				description: description.trim()
 			});
 
-
 			title = '';
 			description = '';
 			open = false;
-
-
 		} catch (error) {
-
-			console.error(
-				"Failed to create survey:",
-				error
-			);
-
+			console.error('Failed to create survey:', error);
 		} finally {
-
 			loading = false;
-
 		}
 	}
-
 
 	function close() {
 		title = '';
@@ -55,72 +40,82 @@
 	}
 </script>
 
-
 <Modal {open}>
 
-	<div class="space-y-5">
+	<div class="space-y-4">
 
-		<h2 class="text-2xl font-bold">
-			Create Survey
-		</h2>
+		<div>
 
+			<h2 class="text-xl font-semibold text-[#3B1E54]">
+				Create Survey
+			</h2>
+
+			<p class="mt-1 text-sm text-slate-500">
+				Give your survey a title and an optional description.
+			</p>
+
+		</div>
 
 		<div class="space-y-2">
 
-			<label for="title" class="text-sm font-medium">
+			<label
+				for="title"
+				class="text-sm font-medium text-slate-700"
+			>
 				Survey Title
 			</label>
-
 
 			<Input
 				id="title"
 				bind:value={title}
-				placeholder="Enter survey title..."
+				placeholder="Customer Satisfaction Survey"
 			/>
 
 		</div>
 
-
-
 		<div class="space-y-2">
 
-			<label for="description" class="text-sm font-medium">
+			<label
+				for="description"
+				class="text-sm font-medium text-slate-700"
+			>
 				Description
 			</label>
-
 
 			<textarea
 				id="description"
 				bind:value={description}
 				rows="4"
-				class="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-				placeholder="Enter a short description..."
+				placeholder="Briefly describe the purpose of this survey..."
+				class="w-full resize-none rounded-xl border border-[#D4BEE4] bg-white px-4 py-3 text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-[#9B7EBD] focus:ring-2 focus:ring-[#D4BEE4]/40"
 			></textarea>
 
 		</div>
 
-
-
-		<div class="flex justify-end gap-3">
+		<div class="flex justify-end gap-3 pt-2">
 
 			<Button
-				variant="secondary"
+				variant="outline"
+				class="min-w-[110px]"
 				onclick={close}
 				disabled={loading}
 			>
 				Cancel
 			</Button>
 
-
 			<Button
+				class="min-w-[140px]"
 				onclick={createSurvey}
-				disabled={loading}
+				disabled={loading || !title.trim()}
 			>
-				{loading ? 'Creating...' : 'Create Survey'}
+				{#if loading}
+					Creating...
+				{:else}
+					Create Survey
+				{/if}
 			</Button>
 
 		</div>
-
 
 	</div>
 

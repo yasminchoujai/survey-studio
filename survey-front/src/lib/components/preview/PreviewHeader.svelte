@@ -29,9 +29,7 @@
 				{survey.title}
 			</h1>
 
-			<p class="text-sm text-slate-500">
-				Survey Preview
-			</p>
+			
 
 		</div>
 

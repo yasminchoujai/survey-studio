@@ -33,13 +33,10 @@
 	};
 
 	const sizes = {
-		sm: 'h-8 px-3 text-sm rounded-lg gap-1.5',
-
-		md: 'h-10 px-4 text-sm rounded-xl gap-2',
-
-		lg: 'h-11 px-5 text-base rounded-xl gap-2.5',
-
-		icon: 'h-10 w-10 rounded-xl p-0'
+		sm: 'h-8 rounded-lg px-3 text-sm',
+		md: 'h-10 rounded-xl px-4 text-sm',
+		lg: 'h-11 rounded-xl px-5 text-base',
+		icon: 'h-10 w-10 rounded-xl'
 	};
 </script>
 
@@ -49,10 +46,15 @@
 	{...props}
 	onclick={onclick}
 	class={`
-		inline-flex items-center justify-center
-		font-medium
-		whitespace-nowrap
+		inline-flex
+		items-center
+		justify-center
+		gap-2
+		shrink-0
 		select-none
+		whitespace-nowrap
+		font-medium
+		leading-none
 		transition-all
 		duration-200
 		ease-out
@@ -67,25 +69,26 @@
 		${variants[variant]}
 		${sizes[size] ?? sizes.md}
 		${className}
+		cursor-pointer
 	`}
 >
 	{#if leftIcon}
 		<svelte:component
 			this={leftIcon}
-			size={16}
-			class="shrink-0"
+			class="h-4 w-4 shrink-0"
 		/>
 	{/if}
 
-	<span class="flex items-center">
-		{@render children?.()}
-	</span>
+	{#if children}
+		<span class="inline-flex items-center gap-2 leading-none">
+			{@render children?.()}
+		</span>
+	{/if}
 
 	{#if rightIcon}
 		<svelte:component
 			this={rightIcon}
-			size={16}
-			class="shrink-0"
+			class="h-4 w-4 shrink-0"
 		/>
 	{/if}
 </button>

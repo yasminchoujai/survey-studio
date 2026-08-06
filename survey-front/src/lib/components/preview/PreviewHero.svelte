@@ -41,10 +41,7 @@
 				question{questionCount !== 1 ? 's' : ''}
 			</div>
 
-			<div class="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700">
-				{survey.sections.length}
-				section{survey.sections.length !== 1 ? 's' : ''}
-			</div>
+		
 
 		
 

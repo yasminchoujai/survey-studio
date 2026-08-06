@@ -6,21 +6,21 @@
 
 	const variants = {
 		draft:
-			'bg-amber-50 text-amber-700 border border-amber-200',
+			'border border-amber-200 bg-amber-50 text-amber-700',
 
 		published:
-			'bg-emerald-50 text-emerald-700 border border-emerald-200',
+			'border border-emerald-200 bg-emerald-50 text-emerald-700',
 
 		info:
-			'bg-blue-50 text-blue-700 border border-blue-200',
+			'border border-blue-200 bg-blue-50 text-blue-700',
 
 		error:
-			'bg-red-50 text-red-700 border border-red-200'
+			'border border-red-200 bg-red-50 text-red-700'
 	};
 </script>
 
 <span
-	class={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${variants[variant]}`}
+	class={`inline-flex h-7 items-center justify-center rounded-full px-3 text-xs font-semibold whitespace-nowrap transition-colors ${variants[variant]}`}
 >
 	{@render children?.()}
 </span>

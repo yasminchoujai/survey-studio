@@ -4,81 +4,206 @@
 
 	import { useSurveys } from '$lib/stores/surveys.svelte';
 
+	import LoadingState from '$lib/components/ui/LoadingState.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
+	import Card from '$lib/components/ui/Card.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+
 	import PreviewHeader from '$lib/components/preview/PreviewHeader.svelte';
-	import PreviewHero from '$lib/components/preview/PreviewHero.svelte';
-	import PreviewSection from '$lib/components/preview/PreviewSection.svelte';
-	import PreviewFooter from '$lib/components/preview/PreviewFooter.svelte';
+	import QuestionField from '$lib/components/public/QuestionField.svelte';
 
 	const { getSurvey } = useSurveys();
 
 	let survey = $state(page.state?.survey ?? null);
+
 	let loading = $state(!survey);
 	let error = $state('');
 
-	onMount(async () => {
-		if (survey) return;
+	let answers = $state({});
+	let errors = $state({});
+
+
+	async function loadSurvey() {
+		loading = true;
+		error = '';
 
 		try {
 			survey = await getSurvey(page.params.id);
+
+			const initial = {};
+
+			for (const section of survey.sections ?? []) {
+				for (const question of section.questions ?? []) {
+
+					if (question.type === 'multiple_choice') {
+						initial[question.id] = [];
+
+					} else if (question.type === 'rating') {
+						initial[question.id] = 0;
+
+					} else {
+						initial[question.id] = '';
+					}
+				}
+			}
+
+			answers = initial;
+
 		} catch (err) {
-			console.error(err);
 			error = err?.message ?? 'Failed to load survey.';
+
 		} finally {
 			loading = false;
+		}
+	}
+
+
+	onMount(() => {
+
+		if (survey) {
+
+			const initial = {};
+
+			for (const section of survey.sections ?? []) {
+				for (const question of section.questions ?? []) {
+
+					if (question.type === 'multiple_choice') {
+						initial[question.id] = [];
+
+					} else if (question.type === 'rating') {
+						initial[question.id] = 0;
+
+					} else {
+						initial[question.id] = '';
+					}
+				}
+			}
+
+			answers = initial;
+			loading = false;
+
+		} else {
+
+			loadSurvey();
+
 		}
 	});
 </script>
 
+
 {#if loading}
 
-	<div class="flex h-full items-center justify-center">
-		<p class="text-slate-500">Loading survey...</p>
-	</div>
+	<LoadingState
+		fullScreen
+		message="Loading preview..."
+		description="Preparing your survey."
+	/>
+
 
 {:else if error}
 
-	<div class="flex h-full items-center justify-center">
-		<p class="text-red-500">{error}</p>
-	</div>
+	<ErrorState
+		title="Couldn't load preview"
+		message={error}
+		buttonText="Retry"
+		onRetry={loadSurvey}
+	/>
+
 
 {:else if survey}
 
-	<div class="flex h-full flex-col bg-slate-50">
+	<div class="min-h-screen bg-slate-50">
 
-		<PreviewHeader survey={survey} />
+		<PreviewHeader {survey} />
 
-		<div class="flex-1 overflow-y-auto">
 
-			<div class="mx-auto max-w-4xl px-6 py-6">
+		<div class="mx-auto max-w-2xl space-y-6 px-4 py-10">
 
-				<div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
-					<PreviewHero survey={survey} />
+			<Card class="space-y-5">
 
-					<div class="space-y-12 p-8">
+				<div class="flex items-center gap-3">
 
-						{#each survey.sections ?? [] as section (section.id)}
+					
 
-							<PreviewSection section={section} />
 
-						{/each}
+					<div>
+
+						<h1 class="text-2xl font-bold text-slate-900">
+							{survey.title}
+						</h1>
+
+
+						{#if survey.description}
+
+							<p class="mt-1 text-slate-500">
+								{survey.description}
+							</p>
+
+						{/if}
 
 					</div>
 
-					<PreviewFooter />
-
 				</div>
 
-			</div>
+
+				<div
+					class="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-700"
+				>
+					This is a preview of your survey. Responses are not saved.
+				</div>
+
+			</Card>
+
+
+
+			{#each survey.sections ?? [] as section}
+
+				{#if section.questions?.length}
+
+					<Card class="space-y-6">
+
+
+						<h2
+							class="text-sm font-semibold uppercase tracking-wide text-slate-400"
+						>
+							{section.title}
+						</h2>
+
+
+						{#each section.questions as question}
+
+
+							<QuestionField
+								{question}
+								bind:value={answers[question.id]}
+								error={errors[question.id]}
+							/>
+
+
+						{/each}
+
+
+					</Card>
+
+				{/if}
+
+			{/each}
+
+
+
+			<Button
+				class="w-full"
+				size="lg"
+				variant="secondary"
+				disabled
+			>
+				Preview Mode
+			</Button>
+
 
 		</div>
 
-	</div>
-
-{:else}
-
-	<div class="flex h-full items-center justify-center">
-		<p class="text-slate-500">Survey not found.</p>
 	</div>
 
 {/if}

@@ -1,12 +1,13 @@
 <script>
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { Inbox, AlertTriangle } from 'lucide-svelte';
+	import { Inbox } from 'lucide-svelte';
 
 	import { useSurveys } from '$lib/stores/surveys.svelte.js';
 
-	import Spinner from '$lib/components/ui/Spinner.svelte';
-	import State from '$lib/components/ui/State.svelte';
+	import LoadingState from '$lib/components/ui/LoadingState.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
 	import ResponsesHeader from '$lib/components/responses/ResponsesHeader.svelte';
 	import ResponsesSummary from '$lib/components/responses/ResponsesSummary.svelte';
@@ -20,18 +21,23 @@
 	let loading = $state(true);
 	let error = $state('');
 
-	onMount(async () => {
+	async function loadResponses() {
+		loading = true;
+		error = '';
+
 		try {
 			const result = await getSurveyWithResponses(page.params.id);
 
 			survey = result.survey;
 			responses = result.responses ?? [];
 		} catch (err) {
-			error = err.message || 'Failed to load responses';
+			error = err.message ?? 'Failed to load responses.';
 		} finally {
 			loading = false;
 		}
-	});
+	}
+
+	onMount(loadResponses);
 
 	let sortedResponses = $derived(
 		[...responses].sort(
@@ -42,19 +48,20 @@
 
 {#if loading}
 
-	<div class="flex h-screen items-center justify-center bg-slate-50">
-		<Spinner />
-	</div>
+	<LoadingState
+		fullScreen
+		message="Loading responses..."
+		description="Fetching survey submissions."
+	/>
 
 {:else if error}
 
-	<div class="flex h-screen items-center justify-center bg-slate-50">
-		<State
-			icon={AlertTriangle}
-			title="Couldn't load responses"
-			description={error}
-		/>
-	</div>
+	<ErrorState
+		title="Couldn't load responses"
+		message={error}
+		buttonText="Retry"
+		onRetry={loadResponses}
+	/>
 
 {:else if survey}
 
@@ -68,10 +75,10 @@
 
 			{#if sortedResponses.length === 0}
 
-				<State
+				<EmptyState
 					icon={Inbox}
 					title="No responses yet"
-					description="Once people start submitting this survey, their answers will show up here."
+					description="Share your survey with respondents. Their submissions will appear here."
 				/>
 
 			{:else}
@@ -79,12 +86,14 @@
 				<div class="space-y-4">
 
 					{#each sortedResponses as response, index (response.id)}
+
 						<ResponseCard
 							{survey}
 							{response}
 							{index}
 							expanded={sortedResponses.length === 1}
 						/>
+
 					{/each}
 
 				</div>

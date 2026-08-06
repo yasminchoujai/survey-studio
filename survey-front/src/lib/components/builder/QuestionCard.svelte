@@ -1,6 +1,7 @@
 <script>
 	import { Copy, Trash2 } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import DeleteModal from '$lib/components/ui/DeleteModal.svelte';
 
 	let {
 		question,
@@ -9,8 +10,13 @@
 		onDuplicate,
 		onDragStart,
 		onDrop,
-		onDragOver
+		onDragOver,
+
+		dragging = false,
+		dragOver = false
 	} = $props();
+
+	let showDeleteModal = $state(false);
 
 	const typeLabels = {
 		short_text: 'Short Text',
@@ -28,29 +34,85 @@
 
 	function remove(event) {
 		event.stopPropagation();
+		showDeleteModal = true;
+	}
+
+	function confirmDelete() {
 		onDelete?.(question.id);
+		showDeleteModal = false;
+	}
+
+	function cancelDelete() {
+		showDeleteModal = false;
 	}
 </script>
 
 <div
 	draggable="true"
-	class="group cursor-pointer rounded-2xl border border-[#E8E2F2] bg-white p-5 transition-all duration-200 hover:border-[#D4BEE4] hover:shadow-md"
 	role="button"
 	tabindex="0"
-	ondragstart={() => onDragStart?.(question.id)}
+	class={`group relative cursor-pointer rounded-2xl border bg-white p-5 transition-all duration-200
+	${dragging ? 'scale-[0.98] opacity-50' : ''}
+	${dragOver
+		? 'border-[#9B7EBD] shadow-lg'
+		: 'border-[#E8E2F2] hover:border-[#D4BEE4] hover:shadow-md'}`}
+
+	ondragstart={(event) => {
+		event.stopPropagation();
+
+		event.dataTransfer.effectAllowed = 'move';
+
+		event.dataTransfer.setData(
+			'application/question-id',
+			question.id
+		);
+
+		event.dataTransfer.setData(
+			'text/plain',
+			question.id
+		);
+
+		onDragStart?.(question.id);
+	}}
+
+	ondragenter={(event) => {
+		event.preventDefault();
+		event.stopPropagation();
+
+		onDragOver?.(question.id);
+	}}
+
 	ondragover={(event) => {
 		event.preventDefault();
-		onDragOver?.();
+		event.stopPropagation();
+
+		event.dataTransfer.dropEffect = 'move';
+
+		onDragOver?.(question.id);
 	}}
-	ondrop={() => onDrop?.(question.id)}
+
+	ondrop={(event) => {
+		event.preventDefault();
+		event.stopPropagation();
+
+		onDrop?.(event, question.id);
+	}}
+
 	onclick={() => onSelect?.(question)}
-	onkeydown={(e) => {
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
+
+	onkeydown={(event) => {
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
 			onSelect?.(question);
 		}
 	}}
 >
+	{#if dragOver}
+		<div
+			class="absolute -top-1 left-4 right-4 h-1 rounded-full bg-[#9B7EBD]"
+		></div>
+	{/if}
+
 	<div class="flex items-start justify-between gap-4">
 		<div class="flex-1">
 			<div class="flex flex-wrap items-center gap-2">
@@ -99,16 +161,19 @@
 
 	<div class="mt-6 rounded-xl bg-[#FAF8FD] p-4">
 		{#if question.type === 'short_text' || question.type === 'email'}
+
 			<div class="rounded-lg border border-[#E8E2F2] bg-white px-4 py-3 text-sm text-slate-400">
 				{question.placeholder || 'Short answer'}
 			</div>
 
 		{:else if question.type === 'long_text'}
+
 			<div class="h-24 rounded-lg border border-[#E8E2F2] bg-white p-4 text-sm text-slate-400">
 				{question.placeholder || 'Long answer'}
 			</div>
 
 		{:else if question.type === 'single_choice'}
+
 			<div class="space-y-3">
 				{#each question.options ?? [] as option}
 					<div class="flex items-center gap-3">
@@ -119,6 +184,7 @@
 			</div>
 
 		{:else if question.type === 'multiple_choice'}
+
 			<div class="space-y-3">
 				{#each question.options ?? [] as option}
 					<div class="flex items-center gap-3">
@@ -129,11 +195,23 @@
 			</div>
 
 		{:else if question.type === 'rating'}
+
 			<div class="flex gap-2 text-2xl text-[#D4BEE4]">
 				{#each [1, 2, 3, 4, 5] as _}
 					<span>★</span>
 				{/each}
 			</div>
+
 		{/if}
 	</div>
 </div>
+
+<DeleteModal
+	open={showDeleteModal}
+	title="Delete Question?"
+	description="This question will be permanently deleted. This action cannot be undone."
+	confirmText="Delete"
+	cancelText="Cancel"
+	onConfirm={confirmDelete}
+	onCancel={cancelDelete}
+/>

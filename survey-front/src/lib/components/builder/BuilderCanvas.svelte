@@ -10,17 +10,22 @@
 		deleteSection,
 		deleteQuestion,
 		duplicateQuestion,
-		reorderSectionQuestions
+		onAddQuestion
 	} = $props();
+
+	function handleDragStart() {
+		// no-op
+	}
+
+	function handleDrop() {
+		// no-op
+	}
 </script>
 
 <section class="flex-1 overflow-y-auto bg-slate-50 p-8">
-
 	<div class="mx-auto flex min-h-full max-w-3xl flex-col gap-5">
 
-		<div
-			class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm"
-		>
+		<div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
 			<p class="text-xs font-semibold uppercase tracking-widest text-violet-600">
 				Survey
 			</p>
@@ -34,19 +39,18 @@
 			</p>
 		</div>
 
-		{#each survey.sections as section}
-
+		{#each survey.sections as section (section.id)}
 			<SectionCard
-				survey={survey}
-				section={section}
+				{section}
 				{selectQuestion}
 				{selectSection}
 				{deleteSection}
 				{deleteQuestion}
 				{duplicateQuestion}
-				{reorderSectionQuestions}
+				{onAddQuestion}
+				onDragStart={handleDragStart}
+				onDrop={handleDrop}
 			/>
-
 		{/each}
 
 		<AddSectionButton
@@ -54,5 +58,4 @@
 		/>
 
 	</div>
-
 </section>

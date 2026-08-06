@@ -1,20 +1,24 @@
 <script>
 	import { Trash2 } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import DeleteModal from '$lib/components/ui/DeleteModal.svelte';
 	import QuestionCard from './QuestionCard.svelte';
 
 	let {
-		survey,
 		section,
 		selectQuestion,
 		selectSection,
 		deleteSection,
 		deleteQuestion,
 		duplicateQuestion,
-		reorderSectionQuestions
+		onDragStart,
+		onDrop,
+		onAddQuestion
 	} = $props();
 
-	let draggedQuestionId = null;
+	let hoveredQuestionId = $state(null);
+	let isDropTarget = $state(false);
+	let showDeleteModal = $state(false);
 
 	function handleSelectSection() {
 		selectSection?.(section.id);
@@ -22,39 +26,58 @@
 
 	function handleDeleteSection(event) {
 		event.stopPropagation();
+		showDeleteModal = true;
+	}
+
+	function confirmDeleteSection() {
 		deleteSection?.(section.id);
+		showDeleteModal = false;
 	}
 
-	function handleDragStart(id) {
-		draggedQuestionId = id;
+	function cancelDeleteSection() {
+		showDeleteModal = false;
 	}
 
-	async function handleDrop(targetId) {
-		if (!draggedQuestionId || draggedQuestionId === targetId) return;
+	function handleDragOver(event) {
+		event.preventDefault();
+		event.dataTransfer.dropEffect = 'copy';
+		isDropTarget = true;
+	}
 
-		const from = section.questions.findIndex(
-			(q) => q.id === draggedQuestionId
+	function handleDragLeave(event) {
+		event.preventDefault();
+		isDropTarget = false;
+	}
+
+	function handleDropOnSection(event) {
+		event.preventDefault();
+		event.stopPropagation();
+
+		isDropTarget = false;
+
+		const questionType = event.dataTransfer.getData(
+			'application/question-type'
 		);
 
-		const to = section.questions.findIndex(
-			(q) => q.id === targetId
-		);
+		console.log('DROP:', questionType);
 
-		if (from === -1 || to === -1) return;
-
-		const [draggedQuestion] = section.questions.splice(from, 1);
-
-		section.questions.splice(to, 0, draggedQuestion);
-
-		// Persist order in backend
-		await reorderSectionQuestions?.(survey, section);
-
-		draggedQuestionId = null;
+		if (questionType) {
+			onAddQuestion?.(section.id, questionType);
+		}
 	}
 </script>
 
 <div
-	class="rounded-2xl border border-[#E8E2F2] bg-white p-5 shadow-sm transition-all duration-200 hover:border-[#D4BEE4]"
+	role="region"
+	aria-label={`Section ${section.id}`}
+	class={`rounded-2xl border bg-white p-5 shadow-sm transition-all duration-200 ${
+		isDropTarget
+			? 'border-[#9B7EBD] ring-2 ring-[#D4BEE4]'
+			: 'border-[#E8E2F2]'
+	}`}
+	ondragover={handleDragOver}
+	ondragleave={handleDragLeave}
+	ondrop={handleDropOnSection}
 >
 	<div
 		class="mb-5 flex items-center justify-between"
@@ -63,15 +86,14 @@
 		onclick={handleSelectSection}
 		onkeydown={(event) => {
 			if (event.key === 'Enter' || event.key === ' ') {
+				event.preventDefault();
 				handleSelectSection();
 			}
 		}}
 	>
-		<div class="flex items-center gap-2">
-			<div class="rounded-full bg-[#F3ECFA] px-3 py-1 text-xs font-medium text-[#3B1E54]">
-				{section.questions.length}
-				Question{section.questions.length !== 1 ? 's' : ''}
-			</div>
+		<div class="rounded-full bg-[#F3ECFA] px-3 py-1 text-xs font-medium text-[#3B1E54]">
+			{section.questions.length}
+			Question{section.questions.length !== 1 ? 's' : ''}
 		</div>
 
 		<Button
@@ -88,29 +110,38 @@
 		{#if section.questions.length === 0}
 
 			<div
-				class="rounded-xl border-2 border-dashed border-[#D4BEE4] bg-[#FCFBFE] p-8 text-center"
+				class="rounded-xl border-2 border-dashed border-[#D4BEE4] bg-[#FCFBFE] p-8 text-center transition-colors"
+				ondragover={handleDragOver}
+				ondragleave={handleDragLeave}
+				ondrop={handleDropOnSection}
 			>
 				<p class="font-medium text-[#3B1E54]">
-					No questions yet
+					Drop a question here
 				</p>
 
 				<p class="mt-2 text-sm text-slate-500">
-					Choose a question type from the left panel.
+					or click a question type from the left panel.
 				</p>
 			</div>
 
 		{:else}
 
-			{#each section.questions as question}
+			{#each section.questions as question (question.id)}
 
 				<QuestionCard
 					{question}
 					onSelect={selectQuestion}
 					onDelete={deleteQuestion}
 					onDuplicate={duplicateQuestion}
-					onDragStart={handleDragStart}
-					onDragOver={() => {}}
-					onDrop={handleDrop}
+					onDragStart={onDragStart}
+					onDragOver={(id) => {
+						hoveredQuestionId = id;
+					}}
+					onDrop={(event, id) => {
+						hoveredQuestionId = null;
+						onDrop?.(event, section.id, id);
+					}}
+					dragOver={hoveredQuestionId === question.id}
 				/>
 
 			{/each}
@@ -118,3 +149,13 @@
 		{/if}
 	</div>
 </div>
+
+<DeleteModal
+	open={showDeleteModal}
+	title="Delete Section?"
+	description="This section and all its questions will be permanently deleted. This action cannot be undone."
+	confirmText="Delete"
+	cancelText="Cancel"
+	onConfirm={confirmDeleteSection}
+	onCancel={cancelDeleteSection}
+/>

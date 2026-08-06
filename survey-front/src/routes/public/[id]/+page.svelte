@@ -156,7 +156,6 @@
 
       <Button
         class="w-full"
-        size="lg"
         disabled={submitting}
         onclick={handleSubmit}
       >

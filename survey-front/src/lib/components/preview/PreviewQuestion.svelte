@@ -1,4 +1,6 @@
 <script>
+	import { Star } from 'lucide-svelte';
+
 	import Input from '$lib/components/ui/Input.svelte';
 	import Textarea from '$lib/components/ui/Textarea.svelte';
 
@@ -9,22 +11,26 @@
 	let rating = $state(0);
 </script>
 
-<div class="space-y-5 rounded-xl border border-slate-200 p-6">
+<div class="space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
 
 	<!-- Question -->
 
-	<div>
+	<div class="space-y-2">
 
-		<h3 class="text-lg font-semibold text-slate-900">
-			{number}. {question.label}
+		<div class="flex items-start justify-between gap-4">
 
-			{#if question.required}
-				<span class="text-red-500">*</span>
-			{/if}
-		</h3>
+			<h3 class="text-lg font-semibold leading-7 text-[#3B1E54]">
+				{number}. {question.label}
+
+				{#if question.required}
+					<span class="ml-1 text-red-500">*</span>
+				{/if}
+			</h3>
+
+		</div>
 
 		{#if question.description}
-			<p class="mt-2 text-sm text-slate-500">
+			<p class="text-sm leading-6 text-slate-500">
 				{question.description}
 			</p>
 		{/if}
@@ -37,6 +43,7 @@
 
 		<Input
 			placeholder={question.placeholder || 'Type your answer'}
+			class="h-11 rounded-xl"
 		/>
 
 	<!-- Email -->
@@ -46,6 +53,7 @@
 		<Input
 			type="email"
 			placeholder={question.placeholder || 'name@example.com'}
+			class="h-11 rounded-xl"
 		/>
 
 	<!-- Long Text -->
@@ -55,6 +63,7 @@
 		<Textarea
 			rows={5}
 			placeholder={question.placeholder || 'Write your answer'}
+			class="rounded-xl"
 		/>
 
 	<!-- Single Choice -->
@@ -66,7 +75,7 @@
 			{#each question.options ?? [] as option}
 
 				<label
-					class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-4 transition hover:border-violet-500"
+					class="group flex cursor-pointer items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 transition-all duration-200 hover:border-[#9B7EBD] hover:bg-violet-50 has-[:checked]:border-[#9B7EBD] has-[:checked]:bg-violet-50 has-[:checked]:ring-2 has-[:checked]:ring-[#D4BEE4]"
 				>
 
 					<input
@@ -74,13 +83,10 @@
 						name={question.id}
 						value={option}
 						bind:group={selectedRadio}
-						class="h-5 w-5 accent-violet-600"
+						class="h-5 w-5 accent-[#9B7EBD]"
 					/>
 
-					<span
-						class:text-violet-700={selectedRadio === option}
-						class:font-semibold={selectedRadio === option}
-					>
+					<span class="text-[15px] font-medium text-slate-700">
 						{option}
 					</span>
 
@@ -99,20 +105,17 @@
 			{#each question.options ?? [] as option}
 
 				<label
-					class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-4 transition hover:border-violet-500"
+					class="group flex cursor-pointer items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 transition-all duration-200 hover:border-[#9B7EBD] hover:bg-violet-50 has-[:checked]:border-[#9B7EBD] has-[:checked]:bg-violet-50 has-[:checked]:ring-2 has-[:checked]:ring-[#D4BEE4]"
 				>
 
 					<input
 						type="checkbox"
 						value={option}
 						bind:group={selectedCheckboxes}
-						class="h-5 w-5 accent-violet-600"
+						class="h-5 w-5 accent-[#9B7EBD]"
 					/>
 
-					<span
-						class:text-violet-700={selectedCheckboxes.includes(option)}
-						class:font-semibold={selectedCheckboxes.includes(option)}
-					>
+					<span class="text-[15px] font-medium text-slate-700">
 						{option}
 					</span>
 
@@ -126,7 +129,7 @@
 
 	{:else if question.type === 'rating'}
 
-		<div class="flex flex-col items-center gap-4">
+		<div class="space-y-4">
 
 			<div class="flex gap-3">
 
@@ -134,17 +137,19 @@
 
 					<button
 						type="button"
-						class="transition duration-200 hover:scale-110"
+						class="rounded-lg p-1 transition-all duration-200 hover:scale-110 focus:outline-none"
 						onclick={() => (rating = star)}
 					>
 
-						<span
-							class="text-5xl transition-colors"
-							class:text-amber-400={star <= rating}
-							class:text-slate-300={star > rating}
-						>
-							★
-						</span>
+						<Star
+							size={30}
+							fill={rating >= star ? 'currentColor' : 'none'}
+							class={`transition-all duration-200 ${
+								rating >= star
+									? 'text-amber-400'
+									: 'text-slate-300 hover:text-amber-300'
+							}`}
+						/>
 
 					</button>
 
@@ -152,12 +157,12 @@
 
 			</div>
 
-			<div class="flex w-full justify-between text-xs font-medium text-slate-500">
+			<div class="flex justify-between text-xs font-medium text-slate-500">
 				<span>Poor</span>
 				<span>Excellent</span>
 			</div>
 
-			<p class="text-sm font-medium text-violet-600">
+			<p class="text-sm font-medium text-[#9B7EBD]">
 				{rating === 0 ? 'Select a rating' : `${rating} of 5`}
 			</p>
 

@@ -7,64 +7,74 @@
 	} = $props();
 </script>
 
+<table class="min-w-full">
 
-	<table class="min-w-full">
+	<thead class="border-b border-slate-200 bg-slate-50/50">
 
-		<thead class="border-b border-slate-200 bg-slate-50">
+		<tr>
+
+			<th
+				class="w-[42%] px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+			>
+				Survey
+			</th>
+
+			<th
+				class="w-[14%] px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+			>
+				Status
+			</th>
+
+			<th
+				class="w-[12%] px-6 py-4 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+			>
+				Responses
+			</th>
+
+			<th
+				class="w-[20%] px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+			>
+				Last Updated
+			</th>
+
+			<th
+				class="w-[12%] px-6 py-4 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+			>
+				Actions
+			</th>
+
+		</tr>
+
+	</thead>
+
+	<tbody class="divide-y divide-slate-100">
+
+		{#if surveys.length === 0}
 
 			<tr>
 
-				<th class="w-[45%] px-9 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-					Survey
-				</th>
-
-				<th class="w-[15%] px-8 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-					Status
-				</th>
-
-				<th class="w-[12%] px-15 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-					Responses
-				</th>
-
-				<th class="w-[18%] px-10 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-					Last Updated
-				</th>
-
-				<th class="w-[10%] px-24 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
-					Actions
-				</th>
+				<td
+					colspan="5"
+					class="py-14 text-center text-sm text-slate-500"
+				>
+					No surveys yet.
+				</td>
 
 			</tr>
 
-		</thead>
+		{:else}
 
-		<tbody class="divide-y divide-slate-100">
+			{#each surveys as survey (survey.id)}
 
-			{#if surveys.length === 0}
+				<SurveyRow
+					{survey}
+					{deleteSurvey}
+				/>
 
-				<tr>
-					<td
-						colspan="5"
-						class="px-8 py-16 text-center text-slate-500"
-					>
-						No surveys yet.
-					</td>
-				</tr>
+			{/each}
 
-			{:else}
+		{/if}
 
-				{#each surveys as survey (survey.id)}
+	</tbody>
 
-					<SurveyRow
-						{survey}
-						{deleteSurvey}
-					/>
-
-				{/each}
-
-			{/if}
-
-		</tbody>
-
-	</table>
-
+</table>
