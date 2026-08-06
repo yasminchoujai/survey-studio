@@ -7,22 +7,20 @@
 
 {#if open}
 
-<div
-	class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
->
-
 	<div
-		class="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-xl"
+		class="fixed inset-0 z-[9999] isolate flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
 	>
 
-		<div class="p-6">
+		<div
+			class="relative z-[10000] w-full max-w-sm rounded-2xl border border-slate-200 bg-white shadow-2xl"
+		>
 
-			{@render children?.()}
+			<div class="p-5">
+				{@render children?.()}
+			</div>
 
 		</div>
 
 	</div>
-
-</div>
 
 {/if}

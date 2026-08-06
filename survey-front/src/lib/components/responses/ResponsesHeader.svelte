@@ -16,7 +16,7 @@
   }
 
   function preview() {
-    goto(`/surveys/${survey.id}`);
+    goto(`/surveys/${survey.id}/preview`);
   }
 
 
