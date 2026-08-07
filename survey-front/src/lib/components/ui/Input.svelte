@@ -5,7 +5,8 @@
 		placeholder = '',
 		value = $bindable(''),
 		disabled = false,
-		class: className = ''
+		class: className = '',
+		...rest
 	} = $props();
 </script>
 
@@ -15,6 +16,7 @@
 	{type}
 	{placeholder}
 	{disabled}
+	{...rest}
 	class={`
 		h-11
 		w-full

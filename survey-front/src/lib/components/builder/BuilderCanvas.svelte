@@ -12,8 +12,9 @@
 		duplicateQuestion,
 		reorderSectionQuestions,
 		onAddQuestion,
-		onDrop,                // ✅ Added
-		selectedQuestionId     // ✅ Added
+		onDrop,
+		selectedQuestionId,
+		updateSectionTitle
 	} = $props();
 
 	async function handleQuestionDrop(event, sectionId, targetId) {
@@ -38,7 +39,6 @@
 
 <section class="flex-1 overflow-y-auto bg-slate-50 p-8">
 	<div class="mx-auto flex min-h-full max-w-3xl flex-col gap-5">
-		<!-- Survey Header -->
 		<div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
 			<p class="text-xs font-semibold uppercase tracking-widest text-violet-600">
 				Survey
@@ -51,7 +51,6 @@
 			</p>
 		</div>
 
-		<!-- Sections -->
 		{#each survey.sections as section (section.id)}
 			<SectionCard
 				{section}
@@ -63,10 +62,10 @@
 				{onAddQuestion}
 				onDrop={handleQuestionDrop}
 				{selectedQuestionId}
+				{updateSectionTitle}
 			/>
 		{/each}
 
-		<!-- Add Section Button -->
 		<AddSectionButton onAddSection={addSection} />
 	</div>
 </section>

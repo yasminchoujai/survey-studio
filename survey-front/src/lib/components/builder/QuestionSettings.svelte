@@ -4,9 +4,31 @@
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 
-	import { Plus, Trash2, Settings2 } from 'lucide-svelte';
+	import { Plus, Trash2, Settings2, Layers } from 'lucide-svelte';
 
-	let { question } = $props();  // ✅ Removed updateQuestion
+	let { 
+		question,
+		sections,
+		selectedSectionId,
+		updateSectionTitle
+	} = $props();
+
+	let currentSection = $derived(
+		sections?.find(s => s.id === selectedSectionId)
+	);
+	let sectionTitle = $state('');
+
+	$effect(() => {
+		if (currentSection) {
+			sectionTitle = currentSection.title || '';
+		}
+	});
+
+	function handleSectionTitleChange() {
+		if (currentSection && sectionTitle.trim()) {
+			updateSectionTitle?.(currentSection.id, sectionTitle.trim());
+		}
+	}
 
 	function addOption() {
 		question.options ??= [];
@@ -19,34 +41,60 @@
 </script>
 
 <aside class="flex w-72 flex-col border-l border-[#E8E2F2] bg-white">
-	{#if !question}
-		<div class="flex h-full flex-col items-center justify-center px-5 text-center">
-			<div class="mb-3 rounded-xl bg-[#F3ECFA] p-3 text-[#9B7EBD]">
-				<Settings2 size={26} />
-			</div>
-
-			<h2 class="text-sm font-semibold text-[#3B1E54]">
-				No Question Selected
-			</h2>
-
-			<p class="mt-1 text-xs text-slate-500">
-				Select a question to edit settings.
+	<div class="flex items-center justify-between border-b border-[#E8E2F2] px-4 py-3">
+		<div>
+			<h2 class="text-sm font-semibold text-[#3B1E54]">Settings</h2>
+			<p class="text-xs text-slate-500">
+				{#if question}
+					Edit question
+				{:else if currentSection}
+					Edit section
+				{:else}
+					Select a section or question
+				{/if}
 			</p>
 		</div>
-	{:else}
-		<div class="flex items-center justify-between border-b border-[#E8E2F2] px-4 py-3">
-			<div>
-				<h2 class="text-sm font-semibold text-[#3B1E54]">
-					Settings
-				</h2>
+	</div>
 
-				<p class="text-xs text-slate-500">
-					Edit question
-				</p>
-			</div>
-		</div>
+	<div class="space-y-5 overflow-y-auto p-4">
+		<!-- Section Settings -->
+		{#if currentSection}
+			<section>
+				<div class="flex items-center gap-2 mb-3">
+					<Layers size={16} class="text-[#9B7EBD]" />
+					<h3 class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+						Section
+					</h3>
+				</div>
+				<div>
+					<label class="mb-1 block text-xs font-medium text-[#3B1E54]">
+						Section Title
+					</label>
+					<Input
+						bind:value={sectionTitle}
+						oninput={handleSectionTitleChange}
+						placeholder="Enter section title..."
+					/>
+				</div>
+			</section>
+		{/if}
 
-		<div class="space-y-5 overflow-y-auto p-4">
+		{#if !question}
+			{#if !currentSection}
+				<div class="flex h-full flex-col items-center justify-center px-5 text-center py-8">
+					<div class="mb-3 rounded-xl bg-[#F3ECFA] p-3 text-[#9B7EBD]">
+						<Settings2 size={26} />
+					</div>
+					<h2 class="text-sm font-semibold text-[#3B1E54]">
+						No Selection
+					</h2>
+					<p class="mt-1 text-xs text-slate-500">
+						Click on a section or question to edit.
+					</p>
+				</div>
+			{/if}
+		{:else}
+			<!-- Question Settings -->
 			<section>
 				<h3 class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
 					General
@@ -57,8 +105,6 @@
 						<label class="mb-1 block text-xs font-medium text-[#3B1E54]">
 							Label
 						</label>
-
-						<!-- ✅ Removed oninput={notifyChange} -->
 						<Input bind:value={question.label} />
 					</div>
 
@@ -66,8 +112,6 @@
 						<label class="mb-1 block text-xs font-medium text-[#3B1E54]">
 							Description
 						</label>
-
-						<!-- ✅ Removed oninput={notifyChange} -->
 						<Textarea bind:value={question.description} />
 					</div>
 				</div>
@@ -83,13 +127,10 @@
 						<p class="text-sm font-medium text-[#3B1E54]">
 							Required
 						</p>
-
 						<p class="text-[11px] text-slate-500">
 							Must answer
 						</p>
 					</div>
-
-					<!-- ✅ Removed onchange={notifyChange} -->
 					<Switch bind:checked={question.required} />
 				</div>
 			</section>
@@ -103,8 +144,6 @@
 					<label class="mb-1 block text-xs font-medium text-[#3B1E54]">
 						Placeholder
 					</label>
-
-					<!-- ✅ Removed oninput={notifyChange} -->
 					<Input bind:value={question.placeholder} />
 				</section>
 			{/if}
@@ -115,7 +154,6 @@
 						<h3 class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
 							Options
 						</h3>
-
 						<Button size="sm" onclick={addOption}>
 							<Plus size={13} />
 							Add
@@ -125,9 +163,7 @@
 					<div class="space-y-2">
 						{#each question.options ?? [] as option, index}
 							<div class="flex gap-2">
-								<!-- ✅ Removed oninput={notifyChange} -->
 								<Input bind:value={question.options[index]} />
-
 								<Button
 									variant="ghost"
 									size="icon"
@@ -140,6 +176,6 @@
 					</div>
 				</section>
 			{/if}
-		</div>
-	{/if}
+		{/if}
+	</div>
 </aside>

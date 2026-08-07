@@ -26,7 +26,7 @@ import {
 
 import { getResponses as fetchResponses } from "$lib/api/responses";
 
-// ✅ Draft store
+// ✅ Draft store====
 export const draftStore = writable(null);
 
 let surveys = $state([]);
@@ -205,7 +205,7 @@ async function duplicateQuestion(survey, questionId) {
 	}
 }
 
-// ✅ Reorder questions
+
 async function reorderSectionQuestions(survey, section) {
 	if (!survey || !section) return;
 	if (!section.questions?.length) return;
@@ -265,7 +265,7 @@ async function getSurveyWithResponses(surveyId) {
 	};
 }
 
-// ✅ Draft functions
+//
 function saveDraft(survey) {
 	if (survey) {
 		draftStore.set(JSON.parse(JSON.stringify(survey)));
@@ -291,7 +291,7 @@ export function useSurveys() {
 		updateQuestion,
 		deleteQuestion,
 		duplicateQuestion,
-		reorderSectionQuestions, // ✅ Added
+		reorderSectionQuestions, 
 		publishSurvey,
 		getResponses,
 		getSurveyWithResponses,
