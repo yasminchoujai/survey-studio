@@ -14,8 +14,6 @@
 	let loading = $state(true);
 	let error = $state('');
 
-	// Backend sends the raw DB value ("published" / "draft") — normalize the
-	// same way lib/stores/surveys.svelte.js already does everywhere else.
 	function normalizeStatus(status) {
 		return status === 'published' ? 'Published' : 'Draft';
 	}
