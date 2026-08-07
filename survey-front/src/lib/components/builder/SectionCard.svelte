@@ -5,7 +5,6 @@
 	import DeleteModal from '$lib/components/ui/DeleteModal.svelte';
 	import QuestionCard from './QuestionCard.svelte';
 
-
 	let {
 		section,
 		selectQuestion,
@@ -14,44 +13,38 @@
 		deleteQuestion,
 		duplicateQuestion,
 		onDrop,
-		onAddQuestion
+		onAddQuestion,
+		selectedQuestionId  // ✅ Added
 	} = $props();
-
 
 	let showDeleteModal = $state(false);
 	let isDropTarget = $state(false);
 
-
 	function handleSelectSection() {
 		selectSection?.(section.id);
 	}
-
 
 	function handleDeleteSection(event) {
 		event.stopPropagation();
 		showDeleteModal = true;
 	}
 
-
 	function confirmDeleteSection() {
 		deleteSection?.(section.id);
 		showDeleteModal = false;
 	}
 
-
 	function cancelDeleteSection() {
 		showDeleteModal = false;
 	}
-
 
 	// Drop question type from left sidebar
 	function handleDragOver(event) {
 		event.preventDefault();
 
-		const type =
-			event.dataTransfer.types.includes(
-				'application/question-type'
-			);
+		const type = event.dataTransfer.types.includes(
+			'application/question-type'
+		);
 
 		if(type){
 			event.dataTransfer.dropEffect = 'copy';
@@ -59,11 +52,9 @@
 		}
 	}
 
-
 	function handleDragLeave() {
 		isDropTarget = false;
 	}
-
 
 	function handleDrop(event) {
 		event.preventDefault();
@@ -71,28 +62,20 @@
 
 		isDropTarget = false;
 
-
-		const questionType =
-			event.dataTransfer.getData(
-				'application/question-type'
-			);
-
+		const questionType = event.dataTransfer.getData(
+			'application/question-type'
+		);
 
 		// adding new question
 		if(questionType){
-
 			onAddQuestion?.(
 				section.id,
 				questionType
 			);
-
 			return;
 		}
 	}
-
 </script>
-
-
 
 <div
 	role="region"
@@ -103,36 +86,24 @@
 			? 'border-[#9B7EBD] ring-2 ring-[#D4BEE4]'
 			: 'border-[#E8E2F2]'
 	}`}
-
 	ondragover={handleDragOver}
 	ondragleave={handleDragLeave}
 	ondrop={handleDrop}
 >
-
-
-
-	<div
-		class="mb-5 flex items-center justify-between"
-	>
-
+	<div class="mb-5 flex items-center justify-between">
 		<button
 			type="button"
-			class="flex items-center"
+			class="flex items-center gap-2"
 			onclick={handleSelectSection}
 		>
-
-			<div
-				class="rounded-full bg-[#F3ECFA] px-3 py-1 text-xs font-medium text-[#3B1E54]"
-			>
-
+			<div class="rounded-full bg-[#F3ECFA] px-3 py-1 text-xs font-medium text-[#3B1E54]">
 				{section.questions?.length ?? 0}
 				Question{section.questions?.length !== 1 ? 's' : ''}
-
 			</div>
-
+			<h3 class="text-sm font-medium text-slate-700 hover:text-[#9B7EBD]">
+				{section.title || 'Untitled Section'}
+			</h3>
 		</button>
-
-
 
 		<Button
 			variant="ghost"
@@ -140,75 +111,36 @@
 			class="text-slate-400 hover:bg-red-50 hover:text-red-500"
 			onclick={handleDeleteSection}
 		>
-
-			<Trash2 size={16}/>
-
+			<Trash2 size={16} />
 		</Button>
-
 	</div>
 
-
-
-
 	<div class="space-y-4">
-
-
 		{#if section.questions?.length === 0}
-
-
-			<div
-				class="rounded-xl border-2 border-dashed border-[#D4BEE4] bg-[#FCFBFE] p-8 text-center"
-			>
-
-				<p class="font-medium text-[#3B1E54]">
-					Drop a question here
-				</p>
-
-				<p class="mt-2 text-sm text-slate-500">
-					Drag a question type from the sidebar
-				</p>
-
+			<div class="rounded-xl border-2 border-dashed border-[#D4BEE4] bg-[#FCFBFE] p-8 text-center">
+				<p class="font-medium text-[#3B1E54]">Drop a question here</p>
+				<p class="mt-2 text-sm text-slate-500">Drag a question type from the sidebar</p>
 			</div>
-
-
 		{:else}
-
-
 			{#each section.questions as question (question.id)}
-
 				<QuestionCard
 					{question}
-
 					onSelect={selectQuestion}
-
 					onDelete={deleteQuestion}
-
 					onDuplicate={duplicateQuestion}
-
-
-					onDrop={(event,targetId)=>{
-
+					isSelected={selectedQuestionId === question.id}
+					onDrop={(event, targetId) => {
 						onDrop?.(
 							event,
 							section.id,
 							targetId
 						);
-
 					}}
 				/>
-
 			{/each}
-
-
 		{/if}
-
-
 	</div>
-
-
 </div>
-
-
 
 <DeleteModal
 	open={showDeleteModal}

@@ -14,7 +14,7 @@
 
 	function preview() {
 		goto(`/surveys/${survey.id}/preview`, {
-			state: { survey: $state.snapshot(survey) }
+			state: { survey: JSON.parse(JSON.stringify(survey)) }  // ✅ Fixed
 		});
 	}
 </script>
@@ -23,7 +23,6 @@
 	class="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6"
 >
 	<!-- Left -->
-
 	<div class="flex min-w-0 items-center gap-3">
 		<Button variant="ghost" size="icon" onclick={back}>
 			<ArrowLeft class="h-5 w-5" />
@@ -49,7 +48,6 @@
 	</div>
 
 	<!-- Actions -->
-
 	<div class="flex items-center gap-3">
 		<Button variant="outline" onclick={preview}>
 			<Eye class="h-4 w-4" />
