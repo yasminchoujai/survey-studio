@@ -2,21 +2,19 @@
 	import { onMount } from "svelte";
 	import { page } from "$app/state";
 	import { goto } from "$app/navigation";
+	import { get } from "svelte/store";
 
 	import { useSurveys } from "$lib/stores/surveys.svelte.js";
 	import { useToast } from "$lib/stores/toast.svelte.js";
-
-	import LoadingState from "$lib/components/ui/LoadingState.svelte";
-	import ErrorState from "$lib/components/ui/ErrorState.svelte";
+	import Modal from "$lib/components/ui/Modal.svelte";
+	import Button from "$lib/components/ui/Button.svelte";
 
 	import BuilderHeader from "$lib/components/builder/BuilderHeader.svelte";
 	import QuestionTypePicker from "$lib/components/builder/QuestionTypePicker.svelte";
 	import BuilderCanvas from "$lib/components/builder/BuilderCanvas.svelte";
 	import QuestionSettings from "$lib/components/builder/QuestionSettings.svelte";
 
-
 	const toast = useToast();
-
 
 	const {
 		getSurvey,
@@ -26,314 +24,332 @@
 		deleteQuestion,
 		duplicateQuestion,
 		deleteSection,
+		updateSection,
 		reorderSectionQuestions,
 		publishSurvey,
 		saveAllQuestions,
-		loading,
-		error
+		draftStore,
+		saveDraft,
+		clearDraft,
 	} = useSurveys();
 
-
 	let survey = $state(null);
-
 	let selectedQuestion = $state(null);
 	let selectedSectionId = $state(null);
 
 	let publishing = $state(false);
 	let publishError = $state("");
+	let isDirty = $state(false);
+	let showLeaveModal = $state(false);
+	let pendingNavigation = $state(null);
+	let loading = $state(true);
+	let error = $state('');
 
+	let isFirstLoad = $state(true);
 
-	async function loadSurvey() {
+	async function loadSurvey(forceRefresh = false) {
+		if (isFirstLoad || forceRefresh) {
+			loading = true;
+		}
+		error = '';
 
 		try {
+			if (survey && !forceRefresh) {
+				console.log('📌 Keeping existing survey');
+				loading = false;
+				return;
+			}
 
-			survey = await getSurvey(page.params.id);
+			const draft = get(draftStore);
+			
+			if (draft && draft.id === page.params.id) {
+				console.log('✅ Loading from draft');
+				survey = draft;
+				isDirty = true;
+			} else {
+				console.log('🔄 Loading from backend');
+				survey = await getSurvey(page.params.id);
+				isDirty = false;
+			}
 
 			if (survey?.sections?.length) {
 				selectedSectionId = survey.sections[0].id;
 			}
-
 		} catch (err) {
+			error = err?.message ?? 'Failed to load survey.';
 			console.error(err);
+		} finally {
+			loading = false;
+			isFirstLoad = false;
 		}
 	}
 
-
-	onMount(loadSurvey);
-
-
+	onMount(() => {
+		loadSurvey();
+	});
 
 	function selectSection(sectionId) {
 		selectedSectionId = sectionId;
 	}
 
-
-
 	function selectQuestion(question) {
 		selectedQuestion = question;
 	}
 
-
-
 	async function handleAddQuestion(sectionId, type) {
-
 		if (!survey) return;
 
-
-		const question = {
-			label: "Untitled question",
-			type,
-			description: "",
-			required: false,
-			placeholder: "",
-			options:
-				type === "single_choice" ||
-				type === "multiple_choice"
+		try {
+			const question = {
+				label: "Untitled question",
+				type,
+				description: "",
+				required: false,
+				placeholder: "",
+				options: type === "single_choice" || type === "multiple_choice"
 					? ["Option 1", "Option 2"]
 					: []
-		};
+			};
 
-
-		selectedQuestion = await addQuestion(
-			survey,
-			sectionId,
-			question
-		);
+			const created = await addQuestion(survey, sectionId, question);
+			selectedQuestion = created;
+			saveDraft(survey);
+			isDirty = true;
+			toast.success("Question added");
+		} catch {
+			toast.error("Failed to add question");
+		}
 	}
-
-
 
 	async function handleUpdateQuestion(question) {
-
 		if (!survey) return;
 
-
-		await updateQuestion(
-			survey,
-			question
-		);
-
-
-		selectedQuestion = question;
+		try {
+			await updateQuestion(survey, question);
+			selectedQuestion = question;
+			saveDraft(survey);
+			isDirty = true;
+			toast.success("Question updated");
+		} catch {
+			toast.error("Failed to update question");
+		}
 	}
-
-
 
 	async function handleDeleteQuestion(questionId) {
-
 		if (!survey) return;
 
+		try {
+			await deleteQuestion(survey, questionId);
 
-		await deleteQuestion(
-			survey,
-			questionId
-		);
-
-
-		if (selectedQuestion?.id === questionId) {
-			selectedQuestion = null;
+			if (selectedQuestion?.id === questionId) {
+				selectedQuestion = null;
+			}
+			saveDraft(survey);
+			isDirty = true;
+			toast.success("Question deleted");
+		} catch {
+			toast.error("Failed to delete question");
 		}
 	}
-
-
 
 	async function handleDuplicateQuestion(questionId) {
-
 		if (!survey) return;
 
+		try {
+			const duplicated = await duplicateQuestion(survey, questionId);
 
-		const duplicated = await duplicateQuestion(
-			survey,
-			questionId
-		);
-
-
-		if (duplicated) {
-			selectedQuestion = duplicated;
+			if (duplicated) {
+				selectedQuestion = duplicated;
+			}
+			saveDraft(survey);
+			isDirty = true;
+			toast.success("Question duplicated");
+		} catch {
+			toast.error("Failed to duplicate question");
 		}
 	}
-
-
 
 	async function handleDeleteSection(sectionId) {
-
 		if (!survey) return;
 
+		try {
+			await deleteSection(survey, sectionId);
 
-		await deleteSection(
-			survey,
-			sectionId
-		);
+			if (selectedSectionId === sectionId) {
+				selectedSectionId = survey.sections[0]?.id ?? null;
+			}
 
-
-		if (selectedSectionId === sectionId) {
-			selectedSectionId =
-				survey.sections[0]?.id ?? null;
-		}
-
-
-		if (
-			selectedQuestion &&
-			!survey.sections.some(section =>
-				section.questions.some(
-					question =>
-						question.id === selectedQuestion.id
+			if (
+				selectedQuestion &&
+				!survey.sections.some(section =>
+					section.questions.some(question => question.id === selectedQuestion.id)
 				)
-			)
-		) {
-
-			selectedQuestion = null;
-
+			) {
+				selectedQuestion = null;
+			}
+			saveDraft(survey);
+			isDirty = true;
+			toast.success("Section deleted");
+		} catch {
+			toast.error("Failed to delete section");
 		}
 	}
-
-
 
 	async function handleAddSection() {
-
 		if (!survey) return;
 
-
-		const section = await addSection(
-			survey
-		);
-
-
-		selectedSectionId = section.id;
+		try {
+			const section = await addSection(survey);
+			selectedSectionId = section.id;
+			saveDraft(survey);
+			isDirty = true;
+			toast.success("Section added");
+		} catch {
+			toast.error("Failed to add section");
+		}
 	}
 
+	async function handleQuestionDrop(event, sectionId, targetQuestionId) {
+		event.preventDefault();
 
+		const draggedQuestionId = event.dataTransfer.getData('application/question-id');
 
-	async function handlePublish() {
+		if (!draggedQuestionId || draggedQuestionId === targetQuestionId) {
+			return;
+		}
 
+		const section = survey.sections.find((s) => s.id === sectionId);
+
+		if (!section) return;
+
+		const fromIndex = section.questions.findIndex((q) => q.id === draggedQuestionId);
+		const toIndex = section.questions.findIndex((q) => q.id === targetQuestionId);
+
+		if (fromIndex === -1 || toIndex === -1) return;
+
+		const [question] = section.questions.splice(fromIndex, 1);
+		section.questions.splice(toIndex, 0, question);
+
+		await reorderSectionQuestions(survey, section);
+		saveDraft(survey);
+	}
+
+	async function handleUpdateSectionTitle(sectionId, title) {
 		if (!survey) return;
 
+		const section = survey.sections.find((s) => s.id === sectionId);
+		if (!section) return;
+
+		try {
+			section.title = title;
+			await updateSection(survey, section);
+			saveDraft(survey);
+			isDirty = true;
+			toast.success("Section renamed");
+		} catch {
+			toast.error("Failed to rename section");
+		}
+	}
+
+	async function handlePublish() {
+		if (!survey) return;
 
 		publishing = true;
 		publishError = "";
 
-
-		const wasPublished =
-			survey.status === "Published";
-
-
 		try {
+			await saveAllQuestions(survey);
 
-			await saveAllQuestions(
-				survey
-			);
-
-
-			if (!wasPublished) {
-
-				await publishSurvey(
-					survey
-				);
-
+			if (survey.status !== "Published") {
+				await publishSurvey(survey);
 			}
 
-
-			toast.success(
-				wasPublished
-					? "Survey updated successfully"
-					: "Survey published successfully"
-			);
-
-
+			isDirty = false;
+			clearDraft();
+			toast.success("Survey published successfully");
 			goto("/dashboard");
-
-
 		} catch (err) {
-
-			console.error(
-				"Failed to save survey:",
-				err
-			);
-
-
-			publishError =
-				err?.message ??
-				"Failed to save survey.";
-
-
-			toast.error(
-				publishError
-			);
-
-
+			console.error("Failed to save survey:", err);
+			publishError = err?.message ?? "Failed to save survey.";
+			toast.error(publishError);
 		} finally {
-
 			publishing = false;
-
 		}
 	}
 
+	function handleLeave(path = "/dashboard") {
+		if (!isDirty) {
+			goto(path);
+			return;
+		}
+		pendingNavigation = path;
+		showLeaveModal = true;
+	}
+
+	function confirmLeave() {
+		showLeaveModal = false;
+		isDirty = false;
+		clearDraft();
+		goto(pendingNavigation || "/dashboard");
+	}
+
+	function cancelLeave() {
+		showLeaveModal = false;
+		pendingNavigation = null;
+	}
+
+	$effect(() => {
+		if (survey && isDirty) {
+			saveDraft(survey);
+		}
+	});
+
+	$effect(() => {
+		const unload = (e) => {
+			if (isDirty) {
+				e.preventDefault();
+				e.returnValue = "You have unsaved changes. Are you sure you want to leave?";
+				return e.returnValue;
+			}
+		};
+		window.addEventListener("beforeunload", unload);
+		return () => window.removeEventListener("beforeunload", unload);
+	});
 </script>
 
+<!-- Leave Modal using Modal component -->
+<Modal open={showLeaveModal}>
+	<div class="text-center">
+		<h3 class="text-lg font-semibold text-slate-900">Discard changes?</h3>
+		<p class="mt-2 text-sm text-slate-500">
+			You have unsaved changes. If you leave now, your edits will be lost.
+		</p>
+		<div class="mt-6 flex justify-center gap-3">
+			<Button variant="outline" onclick={cancelLeave}>
+				Stay
+			</Button>
+			<Button onclick={confirmLeave}>
+				Leave
+			</Button>
+		</div>
+	</div>
+</Modal>
 
-{#if loading}
-
-	<LoadingState
-		fullScreen
-		message="Loading survey..."
-		description="Preparing the builder."
-	/>
-
-
-{:else if error}
-
-
-	<ErrorState
-		title="Couldn't load survey"
-		message={error}
-		buttonText="Retry"
-		onRetry={loadSurvey}
-	/>
-
-
-{:else if survey}
-
-
+{#if survey}
 	<div class="flex h-screen flex-col bg-slate-50">
-
-
-		<BuilderHeader
-			{survey}
-			onPublish={handlePublish}
-			{publishing}
-		>
-
-
-
-		</BuilderHeader>
-
-
+		<BuilderHeader {survey} onPublish={handlePublish} {publishing} />
 
 		{#if publishError}
-
-			<div
-				class="border-b border-red-100 bg-red-50 px-5 py-2 text-sm text-red-600"
-			>
+			<div class="border-b border-red-100 bg-red-50 px-5 py-2 text-sm text-red-600">
 				{publishError}
 			</div>
-
 		{/if}
 
-
-
 		<div class="flex flex-1 overflow-hidden">
-
-
 			<QuestionTypePicker
 				sectionId={selectedSectionId}
 				onAddQuestion={handleAddQuestion}
-			>
-
-
-
-			</QuestionTypePicker>
-
-
+			/>
 
 			<BuilderCanvas
 				{survey}
@@ -343,22 +359,16 @@
 				deleteSection={handleDeleteSection}
 				deleteQuestion={handleDeleteQuestion}
 				duplicateQuestion={handleDuplicateQuestion}
-				reorderSectionQuestions={reorderSectionQuestions}
+				onDrop={handleQuestionDrop}
 				onAddQuestion={handleAddQuestion}
+				updateSectionTitle={handleUpdateSectionTitle}
+				selectedQuestionId={selectedQuestion?.id}
 			/>
-
-
 
 			<QuestionSettings
 				question={selectedQuestion}
 				updateQuestion={handleUpdateQuestion}
 			/>
-
-
 		</div>
-
-
 	</div>
-
-
 {/if}
