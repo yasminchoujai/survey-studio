@@ -20,8 +20,11 @@
 	let search = $state('');
 	let status = $state('All');
 	let view = $state('table');
-
 	let currentPage = $state(1);
+
+	// Loading/error belong to this page
+	let loading = $state(true);
+	let error = $state(null);
 
 	const pageSize = 5;
 
@@ -29,22 +32,38 @@
 		surveys,
 		load,
 		addSurvey,
-		deleteSurvey,
-		loading,
-		error
+		deleteSurvey
 	} = useSurveys();
 
-	onMount(load);
+	async function loadSurveys() {
+		loading = true;
+		error = null;
 
+<<<<<<< Updated upstream
+=======
+		try {
+			await load();
+		} catch (err) {
+			console.error(err);
+			error = err?.message || 'Failed to load surveys.';
+		} finally {
+			loading = false;
+		}
+	}
+
+	onMount(() => {
+		loadSurveys();
+	});
+
+>>>>>>> Stashed changes
 	let filteredSurveys = $derived.by(() => {
 		return surveys.filter((survey) => {
 			const matchesSearch =
-				survey.title.toLowerCase().includes(search.toLowerCase()) ||
-				survey.description.toLowerCase().includes(search.toLowerCase());
+				survey.title?.toLowerCase().includes(search.toLowerCase()) ||
+				survey.description?.toLowerCase().includes(search.toLowerCase());
 
 			const matchesStatus =
-				status === 'All' ||
-				survey.status === status;
+				status === 'All' || survey.status === status;
 
 			return matchesSearch && matchesStatus;
 		});
@@ -107,7 +126,7 @@
 			title="Couldn't load surveys"
 			message={error}
 			buttonText="Retry"
-			onRetry={load}
+			onRetry={loadSurveys}
 		/>
 
 	{:else if paginatedSurveys.length === 0}
@@ -134,16 +153,12 @@
 		{:else}
 
 			<div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-
 				{#each paginatedSurveys as survey (survey.id)}
-
 					<SurveyCard
 						{survey}
 						{deleteSurvey}
 					/>
-
 				{/each}
-
 			</div>
 
 		{/if}

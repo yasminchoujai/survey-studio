@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from '$app/environment';
 import { writable, get } from 'svelte/store';
 
 import {
@@ -6,70 +6,83 @@ import {
 	getSurvey as fetchSurvey,
 	createSurvey,
 	deleteSurvey as removeSurvey,
-	publishSurvey as publishSurveyApi,
-} from "$lib/api/surveys";
+	publishSurvey as publishSurveyApi
+} from '$lib/api/surveys';
 
 import {
 	getSections,
 	createSection,
 	updateSection as updateSectionApi,
-	deleteSection as deleteSectionApi,
-} from "$lib/api/sections";
+	deleteSection as deleteSectionApi
+} from '$lib/api/sections';
 
 import {
 	getQuestions,
 	createQuestion,
 	updateQuestion as updateQuestionApi,
 	deleteQuestion as deleteQuestionApi,
-	reorderQuestions as reorderQuestionsApi, // ✅ Added
-} from "$lib/api/questions";
+	reorderQuestions as reorderQuestionsApi
+} from '$lib/api/questions';
 
-import { getResponses as fetchResponses } from "$lib/api/responses";
+import { getResponses as fetchResponses } from '$lib/api/responses';
 
-// ✅ Draft store====
 export const draftStore = writable(null);
 
-let surveys = $state([]);
+const state = $state({
+	surveys: [],
+	loading: true,
+	error: null
+});
 
 function save() {}
 
 async function load() {
 	if (!browser) return;
 
-	const data = await getSurveys();
+	state.loading = true;
+	state.error = null;
 
-	surveys.splice(0, surveys.length);
+	try {
+		const data = await getSurveys();
 
-	surveys.push(
-		...data.map((survey) => ({
-			...survey,
-			status: survey.status === "published" ? "Published" : "Draft",
-			responses: survey.responses ?? 0,
-			sections: [],
-			updatedAt: survey.updatedAt,
-		})),
-	);
+		state.surveys.splice(0, state.surveys.length);
+
+		state.surveys.push(
+			...data.map((survey) => ({
+				...survey,
+				status: survey.status === 'published' ? 'Published' : 'Draft',
+				responses: survey.responses ?? 0,
+				sections: [],
+				updatedAt: survey.updatedAt
+			}))
+		);
+	} catch (err) {
+		console.error('Failed to load surveys:', err);
+		state.error = err?.message ?? 'Failed to load surveys.';
+	} finally {
+		state.loading = false;
+	}
 }
 
 async function addSurvey(data) {
 	const survey = await createSurvey(data);
 
-	surveys.unshift({
+	state.surveys.unshift({
 		...survey,
-		status: survey.status === "published" ? "Published" : "Draft",
+		status: survey.status === 'published' ? 'Published' : 'Draft',
 		responses: 0,
 		sections: [],
-		updatedAt: survey.updatedAt,
+		updatedAt: survey.updatedAt
 	});
 }
 
 async function deleteSurvey(id) {
 	await removeSurvey(id);
 
-	const index = surveys.findIndex((survey) => survey.id === id);
+	const index = state.surveys.findIndex((survey) => survey.id === id);
 
 	if (index !== -1) {
-		surveys.splice(index, 1);
+		state.surveys.splice(index, 1);
 	}
 }
 
@@ -84,23 +97,19 @@ async function getSurvey(id) {
 
 	return {
 		...survey,
-		status: survey.status === "published" ? "Published" : "Draft",
+		status: survey.status === 'published' ? 'Published' : 'Draft',
 		responses: survey.responses ?? 0,
 		sections,
-		updatedAt: survey.updatedAt,
+		updatedAt: survey.updatedAt
 	};
 }
-
-/* ===========================
-	Builder
-=========================== */
 
 async function addSection(survey) {
 	const section = await createSection(survey.id);
 
 	survey.sections.push({
 		...section,
-		questions: [],
+		questions: []
 	});
 
 	return section;
@@ -109,11 +118,11 @@ async function addSection(survey) {
 async function updateSection(survey, updatedSection) {
 	const savedSection = await updateSectionApi(
 		updatedSection.id,
-		updatedSection,
+		updatedSection
 	);
 
 	const existing = survey.sections.find(
-		(section) => section.id === savedSection.id,
+		(section) => section.id === savedSection.id
 	);
 
 	if (existing) {
@@ -127,7 +136,7 @@ async function deleteSection(survey, sectionId) {
 	await deleteSectionApi(sectionId);
 
 	const index = survey.sections.findIndex(
-		(section) => section.id === sectionId,
+		(section) => section.id === sectionId
 	);
 
 	if (index !== -1) {
@@ -136,7 +145,11 @@ async function deleteSection(survey, sectionId) {
 }
 
 async function addQuestion(survey, sectionId, question) {
-	const createdQuestion = await createQuestion(survey.id, sectionId, question);
+	const createdQuestion = await createQuestion(
+		survey.id,
+		sectionId,
+		question
+	);
 
 	const section = survey.sections.find((s) => s.id === sectionId);
 
@@ -154,11 +167,13 @@ async function addQuestion(survey, sectionId, question) {
 async function updateQuestion(survey, updatedQuestion) {
 	const savedQuestion = await updateQuestionApi(
 		updatedQuestion.id,
-		updatedQuestion,
+		updatedQuestion
 	);
 
 	for (const section of survey.sections) {
-		const existing = section.questions.find((q) => q.id === savedQuestion.id);
+		const existing = section.questions.find(
+			(q) => q.id === savedQuestion.id
+		);
 
 		if (!existing) continue;
 
@@ -175,12 +190,11 @@ async function deleteQuestion(survey, questionId) {
 
 	for (const section of survey.sections) {
 		const index = section.questions.findIndex(
-			(question) => question.id === questionId,
+			(question) => question.id === questionId
 		);
 
 		if (index !== -1) {
 			section.questions.splice(index, 1);
-
 			return;
 		}
 	}
@@ -188,7 +202,9 @@ async function deleteQuestion(survey, questionId) {
 
 async function duplicateQuestion(survey, questionId) {
 	for (const section of survey.sections) {
-		const question = section.questions.find((q) => q.id === questionId);
+		const question = section.questions.find(
+			(q) => q.id === questionId
+		);
 
 		if (!question) continue;
 
@@ -198,19 +214,24 @@ async function duplicateQuestion(survey, questionId) {
 			description: question.description,
 			required: question.required,
 			placeholder: question.placeholder,
-			options: [...(question.options ?? [])],
+			options: [...(question.options ?? [])]
 		};
 
-		return await addQuestion(survey, section.id, copy);
+		return await addQuestion(
+			survey,
+			section.id,
+			copy
+		);
 	}
 }
-
 
 async function reorderSectionQuestions(survey, section) {
 	if (!survey || !section) return;
 	if (!section.questions?.length) return;
 
-	const order = section.questions.map((question) => question.id);
+	const order = section.questions.map(
+		(question) => question.id
+	);
 
 	await reorderQuestionsApi(
 		survey.id,
@@ -222,12 +243,17 @@ async function reorderSectionQuestions(survey, section) {
 async function publishSurvey(survey) {
 	const updatedSurvey = await publishSurveyApi(survey.id);
 
-	const status = updatedSurvey.status === "published" ? "Published" : "Draft";
+	const status =
+		updatedSurvey.status === 'published'
+			? 'Published'
+			: 'Draft';
 
 	survey.status = status;
 	survey.updatedAt = updatedSurvey.updatedAt;
 
-	const existing = surveys.find((s) => s.id === survey.id);
+	const existing = state.surveys.find(
+		(s) => s.id === survey.id
+	);
 
 	if (existing) {
 		existing.status = status;
@@ -245,9 +271,17 @@ async function saveAllQuestions(survey) {
 	}
 }
 
+<<<<<<< Updated upstream
 /* ===========================
 	Responses
 =========================== */
+=======
+async function saveAllSections(survey) {
+	for (const section of survey.sections) {
+		await updateSection(survey, section);
+	}
+}
+>>>>>>> Stashed changes
 
 async function getResponses(surveyId) {
 	return await fetchResponses(surveyId);
@@ -256,19 +290,20 @@ async function getResponses(surveyId) {
 async function getSurveyWithResponses(surveyId) {
 	const [survey, responses] = await Promise.all([
 		getSurvey(surveyId),
-		fetchResponses(surveyId),
+		fetchResponses(surveyId)
 	]);
 
 	return {
 		survey,
-		responses,
+		responses
 	};
 }
 
-//
 function saveDraft(survey) {
 	if (survey) {
-		draftStore.set(JSON.parse(JSON.stringify(survey)));
+		draftStore.set(
+			JSON.parse(JSON.stringify(survey))
+		);
 	}
 }
 
@@ -278,7 +313,9 @@ function clearDraft() {
 
 export function useSurveys() {
 	return {
-		surveys,
+		get surveys() { return state.surveys },
+		get loading() { return state.loading },
+		get error() { return state.error },
 		load,
 		save,
 		getSurvey,
@@ -291,13 +328,17 @@ export function useSurveys() {
 		updateQuestion,
 		deleteQuestion,
 		duplicateQuestion,
-		reorderSectionQuestions, 
+		reorderSectionQuestions,
 		publishSurvey,
 		getResponses,
 		getSurveyWithResponses,
 		saveAllQuestions,
+<<<<<<< Updated upstream
+=======
+		saveAllSections,
+>>>>>>> Stashed changes
 		draftStore,
 		saveDraft,
-		clearDraft,
+		clearDraft
 	};
 }
