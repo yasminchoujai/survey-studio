@@ -7,45 +7,41 @@
 	} = $props();
 </script>
 
-<table class="min-w-full">
+<table class="min-w-full ">
 
 	<thead class="border-b border-slate-200 bg-slate-50/50">
+	<tr>
+		<th
+			class="w-[40%] px-7 py-4 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+		>
+			Survey
+		</th>
 
-		<tr>
+		<th
+			class="w-[15%] px-16 py-4 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+		>
+			Status
+		</th>
 
-			<th
-				class="w-[42%] px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500"
-			>
-				Survey
-			</th>
+		<th
+			class="w-[20%] px-1 py-4 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-500 mr-20"
+		>
+			Responses
+		</th>
 
-			<th
-				class="w-[14%] px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500"
-			>
-				Status
-			</th>
+		<th
+			class="w-[12%] px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+		>
+			Last Updated
+		</th>
 
-			<th
-				class="w-[12%] px-6 py-4 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-500"
-			>
-				Responses
-			</th>
-
-			<th
-				class="w-[20%] px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500"
-			>
-				Last Updated
-			</th>
-
-			<th
-				class="w-[12%] px-6 py-4 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-500"
-			>
-				Actions
-			</th>
-
-		</tr>
-
-	</thead>
+		<th
+			class="w-[20%] px-6 py-4 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+		>
+			Actions
+		</th>
+	</tr>
+</thead>
 
 	<tbody class="divide-y divide-slate-100">
 
