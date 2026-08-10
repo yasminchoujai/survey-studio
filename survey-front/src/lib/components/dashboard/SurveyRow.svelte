@@ -45,7 +45,7 @@
 	</td>
 
 	<!-- Status -->
-	<td class="px-6 py-5 align-middle">
+	<td class="px-12 py-5 align-middle">
 		<StatusBadge status={survey.status} />
 	</td>
 
