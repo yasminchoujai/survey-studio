@@ -16,9 +16,10 @@
 
 	function back() {
 		if (hasUnsavedChanges) {
-			onLeave();
+			onLeave('/dashboard');
 			return;
 		}
+
 		goto('/dashboard');
 	}
 
@@ -32,7 +33,6 @@
 <header
 	class="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6"
 >
-	<!-- Left -->
 	<div class="flex min-w-0 items-center gap-3">
 		<Button variant="ghost" size="icon" onclick={back}>
 			<ArrowLeft class="h-5 w-5" />
@@ -43,15 +43,12 @@
 				{survey.title}
 			</h1>
 
-			<!-- ✅ Status Badge -->
 			{#if isPublished}
-				<!-- Published - GREEN -->
 				<div class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
 					<span class="h-2 w-2 rounded-full bg-emerald-500"></span>
 					Published
 				</div>
 			{:else}
-				<!-- Draft - YELLOW (always yellow for draft) -->
 				<div class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
 					<span class="h-2 w-2 rounded-full bg-amber-500"></span>
 					Draft
@@ -65,7 +62,6 @@
 		</div>
 	</div>
 
-	<!-- Actions -->
 	<div class="flex items-center gap-3">
 		<Button variant="outline" onclick={preview}>
 			<Eye class="h-4 w-4" />
