@@ -337,8 +337,13 @@
 
 {#if survey}
 	<div class="flex h-screen flex-col bg-slate-50">
-		<BuilderHeader {survey} onPublish={handlePublish} {publishing} />
-
+<BuilderHeader
+	{survey}
+	onPublish={handlePublish}
+	{publishing}
+	hasUnsavedChanges={isDirty}
+	onLeave={handleLeave}
+/>
 		{#if publishError}
 			<div class="border-b border-red-100 bg-red-50 px-5 py-2 text-sm text-red-600">
 				{publishError}
