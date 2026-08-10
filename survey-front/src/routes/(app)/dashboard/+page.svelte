@@ -74,7 +74,7 @@
 	});
 </script>
 
-<div class="mx-auto max-w-7xl space-y-5">
+<div class="mx-auto max-w-7xl space-y-5 px-10">
 
 	<div class="flex items-end justify-between py-6">
 		<div>

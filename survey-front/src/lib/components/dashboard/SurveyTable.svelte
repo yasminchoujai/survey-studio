@@ -7,7 +7,7 @@
 	} = $props();
 </script>
 
-<table class="min-w-full">
+<table class="min-w-full ">
 
 	<thead class="border-b border-slate-200 bg-slate-50/50">
 
