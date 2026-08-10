@@ -245,6 +245,12 @@ async function saveAllQuestions(survey) {
 	}
 }
 
+async function saveAllSections(survey) {
+	for (const section of survey.sections) {
+		await updateSection(survey, section);
+	}
+}
+
 /* ===========================
 	Responses
 =========================== */
@@ -297,6 +303,7 @@ export function useSurveys() {
 		getSurveyWithResponses,
 		saveAllQuestions,
 		draftStore,
+		saveAllSections,
 		saveDraft,
 		clearDraft,
 	};
