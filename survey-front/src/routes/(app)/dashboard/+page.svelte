@@ -39,8 +39,6 @@
 		loading = true;
 		error = null;
 
-<<<<<<< Updated upstream
-=======
 		try {
 			await load();
 		} catch (err) {
@@ -55,7 +53,6 @@
 		loadSurveys();
 	});
 
->>>>>>> Stashed changes
 	let filteredSurveys = $derived.by(() => {
 		return surveys.filter((survey) => {
 			const matchesSearch =
@@ -92,7 +89,7 @@
 	});
 </script>
 
-<div class="mx-auto max-w-7xl space-y-5">
+<div class="mx-auto max-w-7xl space-y-5 px-10">
 
 	<div class="flex items-end justify-between py-6">
 		<div>
