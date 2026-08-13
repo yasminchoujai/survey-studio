@@ -52,6 +52,7 @@
 		loadSurveys();
 	});
 
+
 	let filteredSurveys = $derived.by(() => {
 		return surveys.filter((survey) => {
 			const matchesSearch =
