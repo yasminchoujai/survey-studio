@@ -26,25 +26,59 @@
 		error = '';
 
 		try {
-			const result = await getSurveyWithResponses(page.params.id);
+			const surveyId = page.params.id;
 
-			survey = result.survey;
-			responses = result.responses ?? [];
+			if (!surveyId) {
+				throw new Error('Survey ID is missing.');
+			}
+
+			const result =
+				await getSurveyWithResponses(surveyId);
+
+			if (!result) {
+				throw new Error(
+					'No response data was returned.'
+				);
+			}
+
+			survey = result.survey ?? null;
+
+			responses = Array.isArray(result.responses)
+				? result.responses
+				: [];
+
 		} catch (err) {
-			error = err.message ?? 'Failed to load responses.';
+			error =
+				err?.message ??
+				'Failed to load responses.';
 		} finally {
 			loading = false;
 		}
 	}
 
-	onMount(loadResponses);
+	onMount(() => {
+		loadResponses();
+	});
 
 	let sortedResponses = $derived(
-		[...responses].sort(
-			(a, b) => new Date(b.submittedAt) - new Date(a.submittedAt)
-		)
+		[...responses].sort((a, b) => {
+			const dateA = new Date(
+				a.submittedAt ??
+				a.createdAt ??
+				0
+			);
+
+			const dateB = new Date(
+				b.submittedAt ??
+				b.createdAt ??
+				0
+			);
+
+			return dateB - dateA;
+		})
 	);
 </script>
+
 
 {#if loading}
 
@@ -53,6 +87,7 @@
 		message="Loading responses..."
 		description="Fetching survey submissions."
 	/>
+
 
 {:else if error}
 
@@ -63,15 +98,31 @@
 		onRetry={loadResponses}
 	/>
 
+
 {:else if survey}
 
 	<div class="min-h-screen bg-slate-50">
 
+		<!-- HEADER -->
+
 		<ResponsesHeader {survey} />
 
-		<div class="mx-auto max-w-5xl space-y-6 p-8">
 
-			<ResponsesSummary {survey} {responses} />
+		<!-- CONTENT -->
+
+		<div
+			class="mx-auto max-w-5xl space-y-6 p-6 md:p-8"
+		>
+
+			<!-- SUMMARY -->
+
+			<ResponsesSummary
+				{survey}
+				{responses}
+			/>
+
+
+			<!-- RESPONSES -->
 
 			{#if sortedResponses.length === 0}
 
@@ -91,7 +142,9 @@
 							{survey}
 							{response}
 							{index}
-							expanded={sortedResponses.length === 1}
+							expanded={
+								sortedResponses.length === 1
+							}
 						/>
 
 					{/each}
@@ -103,5 +156,14 @@
 		</div>
 
 	</div>
+
+
+{:else}
+
+	<EmptyState
+		icon={Inbox}
+		title="Survey not found"
+		description="We couldn't find this survey."
+	/>
 
 {/if}

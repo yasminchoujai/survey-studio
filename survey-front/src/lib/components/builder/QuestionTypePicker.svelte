@@ -1,6 +1,4 @@
 <script>
-	import Button from '$lib/components/ui/Button.svelte';
-
 	import {
 		Type,
 		Text,
@@ -10,15 +8,9 @@
 		Star
 	} from 'lucide-svelte';
 
-
-	let {
-		sectionId,
-		onAddQuestion
-	} = $props();
-
+	let { onAddQuestion } = $props();
 
 	let draggingType = $state(null);
-
 
 	const questionGroups = [
 		{
@@ -74,223 +66,96 @@
 		}
 	];
 
-
 	function add(type) {
+		console.log('➕ Adding question:', type);
 
-		if (!sectionId) return;
-
-		onAddQuestion?.(
-			sectionId,
-			type
-		);
-
+		onAddQuestion?.(type);
 	}
 
-
-
 	function dragStart(event, type) {
-
 		draggingType = type;
-
 
 		event.dataTransfer.effectAllowed = 'copy';
 
-
+		// THIS means "create a NEW question"
 		event.dataTransfer.setData(
 			'application/question-type',
 			type
 		);
 
-
+		// fallback
 		event.dataTransfer.setData(
 			'text/plain',
 			type
 		);
 
-
-		const target = event.currentTarget;
-
-
-		setTimeout(() => {
-
-			target.classList.add(
-				'opacity-50',
-				'scale-95'
-			);
-
-		}, 0);
-
+		console.log('🟣 Dragging question type:', type);
 	}
 
-
-
-	function dragEnd(event) {
-
+	function dragEnd() {
 		draggingType = null;
-
-
-		event.currentTarget.classList.remove(
-			'opacity-50',
-			'scale-95'
-		);
-
 	}
-
 </script>
-
 
 <aside
 	class="flex h-full w-60 flex-col border-r border-[#E8E2F2] bg-white"
 >
-
-
 	<div class="border-b border-[#E8E2F2] px-5 py-4">
-
 		<h2 class="text-base font-semibold text-[#3B1E54]">
 			Add Question
 		</h2>
 
-
 		<p class="mt-1 text-xs text-slate-500">
-			Click or drag into a section
+			Click or drag to add a question
 		</p>
-
 	</div>
 
-
-
 	<div class="flex-1 space-y-6 overflow-y-auto p-4">
-
-
 		{#each questionGroups as group}
-
-
 			<div>
-
-
 				<h3
 					class="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400"
 				>
 					{group.title}
 				</h3>
 
-
-
 				<div class="space-y-2">
-
-
 					{#each group.items as question}
-
-
-						<Button
+						<button
+							type="button"
 							draggable="true"
-
+							class="group flex h-auto w-full cursor-grab justify-start rounded-xl border border-transparent px-3 py-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-[#D4BEE4] hover:bg-[#F8F5FC] hover:shadow-sm active:cursor-grabbing"
+							class:opacity-50={draggingType === question.type}
+							class:scale-95={draggingType === question.type}
+							onclick={() => add(question.type)}
 							ondragstart={(event) =>
-								dragStart(
-									event,
-									question.type
-								)
+								dragStart(event, question.type)
 							}
-
 							ondragend={dragEnd}
-
-							variant="ghost"
-
-							class={`
-								group
-								h-auto
-								w-full
-								cursor-grab
-								justify-start
-								rounded-xl
-								border
-								border-transparent
-								px-3
-								py-2.5
-								transition-all
-								duration-200
-
-								hover:-translate-y-0.5
-								hover:border-[#D4BEE4]
-								hover:bg-[#F8F5FC]
-								hover:shadow-sm
-
-								active:cursor-grabbing
-
-								${draggingType === question.type
-									? 'opacity-50 scale-95'
-									: ''}
-							`}
-
-							onclick={() =>
-								add(question.type)
-							}
 						>
-
-
 							<div class="flex w-full items-center gap-3">
-
-
 								<div
-									class="
-										flex
-										h-9
-										w-9
-										items-center
-										justify-center
-										rounded-lg
-										bg-[#F4EFF8]
-										text-[#9B7EBD]
-										transition-all
-										duration-200
-
-										group-hover:bg-[#D4BEE4]
-										group-hover:text-[#3B1E54]
-									"
+									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F4EFF8] text-[#9B7EBD] transition-all group-hover:bg-[#D4BEE4] group-hover:text-[#3B1E54]"
 								>
-
 									<question.icon size={16} />
-
 								</div>
 
-
-
-
-								<div class="flex-1 text-left">
-
-
-									<p class="text-sm font-medium text-[#3B1E54]">
+								<div class="flex-1">
+									<p
+										class="text-sm font-medium text-[#3B1E54]"
+									>
 										{question.name}
 									</p>
-
 
 									<p class="text-[11px] text-slate-500">
 										{question.helper}
 									</p>
-
-
 								</div>
-
-
 							</div>
-
-
-						</Button>
-
-
+						</button>
 					{/each}
-
-
 				</div>
-
-
 			</div>
-
-
 		{/each}
-
-
 	</div>
-
-
 </aside>

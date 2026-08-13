@@ -1,166 +1,318 @@
 <script>
-  import { onMount } from "svelte";
-  import { page } from "$app/state";
-  import { CheckCircle2, AlertTriangle } from "lucide-svelte";
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import { CheckCircle2, AlertTriangle } from 'lucide-svelte';
 
-  import { getPublicSurvey } from "$lib/api/public.js";
-  import { submitResponse } from "$lib/api/responses.js";
+	import { getPublicSurvey } from '$lib/api/public.js';
+	import { submitResponse } from '$lib/api/responses.js';
 
-  import Card from "$lib/components/ui/Card.svelte";
-  import Button from "$lib/components/ui/Button.svelte";
-  import Spinner from "$lib/components/ui/Spinner.svelte";
-  import State from "$lib/components/ui/State.svelte";
+	import Card from '$lib/components/ui/Card.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Spinner from '$lib/components/ui/Spinner.svelte';
+	import State from '$lib/components/ui/State.svelte';
 
-  import QuestionField from "$lib/components/public/QuestionField.svelte";
+	import QuestionField from '$lib/components/public/QuestionField.svelte';
 
-  let survey = $state(null);
-  let answers = $state({});
-  let errors = $state({});
+	let survey = $state(null);
+	let answers = $state({});
+	let errors = $state({});
 
-  let loading = $state(true);
-  let loadError = $state("");
+	let loading = $state(true);
+	let loadError = $state('');
 
-  let submitting = $state(false);
-  let submitted = $state(false);
+	let submitting = $state(false);
+	let submitted = $state(false);
 
-  onMount(async () => {
-    try {
-      survey = await getPublicSurvey(page.params.id);
+	function normalizeSurveyResponse(response) {
+		if (response?.success && response?.data) {
+			return response.data;
+		}
 
-      const initial = {};
+		if (response?.data) {
+			return response.data;
+		}
 
-      for (const section of survey.sections) {
-        for (const question of section.questions) {
-          if (question.type === "multiple_choice") {
-            initial[question.id] = [];
-          } else if (question.type === "rating") {
-            initial[question.id] = 0;
-          } else {
-            initial[question.id] = "";
-          }
-        }
-      }
+		return response;
+	}
 
-      answers = initial;
-    } catch (err) {
-      loadError = err.message || "This survey could not be found";
-    } finally {
-      loading = false;
-    }
-  });
+	function normalizeSurvey(surveyData) {
+		if (!surveyData) return null;
 
-  function validate() {
-    errors = {};
+		let sections = Array.isArray(surveyData.sections)
+			? surveyData.sections
+			: [];
 
-    for (const section of survey.sections) {
-      for (const question of section.questions) {
-        if (!question.required) continue;
+		if (
+			sections.length === 0 &&
+			Array.isArray(surveyData.questions) &&
+			surveyData.questions.length > 0
+		) {
+			sections = [
+				{
+					id: 'default-section',
+					title: '',
+					questions: surveyData.questions
+				}
+			];
+		}
 
-        const value = answers[question.id];
+		return {
+			...surveyData,
+			sections
+		};
+	}
 
-        const empty =
-          value === undefined ||
-          value === null ||
-          value === "" ||
-          (Array.isArray(value) && value.length === 0);
+	function initializeAnswers(data) {
+		const initial = {};
 
-        if (empty) {
-          errors[question.id] = "This question is required";
-        }
-      }
-    }
+		for (const section of data?.sections ?? []) {
+			for (const question of section.questions ?? []) {
+				if (!question.id) continue;
 
-    return Object.keys(errors).length === 0;
-  }
+				if (question.type === 'multiple_choice') {
+					initial[question.id] = [];
+				} else if (question.type === 'rating') {
+					initial[question.id] = 0;
+				} else {
+					initial[question.id] = '';
+				}
+			}
+		}
 
-  async function handleSubmit() {
-    if (!validate()) return;
+		return initial;
+	}
 
-    submitting = true;
+	async function loadSurvey() {
+		loading = true;
+		loadError = '';
 
-    try {
-      const payload = Object.entries(answers).map(([questionId, value]) => ({
-        questionId,
-        value,
-      }));
+		try {
+			const response = await getPublicSurvey(page.params.id);
 
-      await submitResponse(survey.id, payload);
+			const data = normalizeSurveyResponse(response);
 
-      submitted = true;
-    } catch (err) {
-      loadError = err.message || "Failed to submit your response";
-    } finally {
-      submitting = false;
-    }
-  }
+			if (!data) {
+				throw new Error('Survey not found');
+			}
+
+			survey = normalizeSurvey(data);
+			answers = initializeAnswers(survey);
+		} catch (err) {
+			loadError =
+				err?.message ??
+				'This survey could not be found.';
+		} finally {
+			loading = false;
+		}
+	}
+
+	onMount(() => {
+		loadSurvey();
+	});
+
+	function validate() {
+		errors = {};
+
+		if (!survey) return false;
+
+		for (const section of survey.sections ?? []) {
+			for (const question of section.questions ?? []) {
+				if (!question.required) continue;
+
+				const value = answers[question.id];
+
+				const empty =
+					value === undefined ||
+					value === null ||
+					value === '' ||
+					(Array.isArray(value) &&
+						value.length === 0);
+
+				if (empty) {
+					errors[question.id] =
+						'This question is required';
+				}
+			}
+		}
+
+		return Object.keys(errors).length === 0;
+	}
+
+	async function handleSubmit() {
+		if (!survey) return;
+
+		if (!validate()) {
+			return;
+		}
+
+		submitting = true;
+		loadError = '';
+
+		try {
+			const payload = Object.entries(answers).map(
+				([questionId, value]) => ({
+					questionId,
+					value
+				})
+			);
+
+			await submitResponse(
+				survey.id,
+				payload
+			);
+
+			submitted = true;
+		} catch (err) {
+			loadError =
+				err?.message ??
+				'Failed to submit your response.';
+		} finally {
+			submitting = false;
+		}
+	}
 </script>
 
 {#if loading}
-  <div class="flex h-screen items-center justify-center bg-slate-50">
-    <Spinner />
-  </div>
+
+	<div
+		class="flex min-h-screen items-center justify-center bg-slate-50"
+	>
+		<Spinner />
+	</div>
+
 {:else if loadError && !survey}
-  <div class="flex h-screen items-center justify-center bg-slate-50">
-    <State
-      icon={AlertTriangle}
-      title="Survey unavailable"
-      description={loadError}
-    />
-  </div>
+
+	<div
+		class="flex min-h-screen items-center justify-center bg-slate-50 px-4"
+	>
+		<State
+			icon={AlertTriangle}
+			title="Survey unavailable"
+			description={loadError}
+		/>
+	</div>
+
 {:else if submitted}
-  <div class="flex h-screen items-center justify-center bg-slate-50">
-    <State
-      icon={CheckCircle2}
-      title="Thanks for your response!"
-      description="Your answers have been submitted successfully."
-    />
-  </div>
+
+	<div
+		class="flex min-h-screen items-center justify-center bg-slate-50 px-4"
+	>
+		<State
+			icon={CheckCircle2}
+			title="Thanks for your response!"
+			description="Your answers have been submitted successfully."
+		/>
+	</div>
+
 {:else if survey}
-  <div class="min-h-screen bg-slate-50 px-4 py-10">
-    <div class="mx-auto max-w-2xl space-y-6">
-      <Card>
-        <h1 class="text-2xl font-bold text-slate-900">
-          {survey.title}
-        </h1>
 
-        {#if survey.description}
-          <p class="mt-2 text-slate-500">
-            {survey.description}
-          </p>
-        {/if}
-      </Card>
+	<div class="min-h-screen bg-slate-50 px-4 py-10">
+		<div class="mx-auto max-w-2xl space-y-6">
 
-      {#each survey.sections as section}
-        {#if section.questions.length}
-          <Card class="space-y-6">
-            <h2
-              class="text-sm font-semibold uppercase tracking-wide text-slate-400"
-            >
-              {section.title}
-            </h2>
+			<Card class="space-y-3">
+				<h1
+					class="text-3xl font-bold text-slate-900"
+				>
+					{survey.title}
+				</h1>
 
-            {#each section.questions as question}
-              <QuestionField
-                {question}
-                bind:value={answers[question.id]}
-                error={errors[question.id]}
-              />
-            {/each}
-          </Card>
-        {/if}
-      {/each}
+				{#if survey.description}
+					<p
+						class="text-base leading-7 text-slate-500"
+					>
+						{survey.description}
+					</p>
+				{/if}
+			</Card>
 
-      {#if loadError}
-        <p class="text-sm text-red-500">{loadError}</p>
-      {/if}
+			{#if survey.sections?.length}
 
-      <Button
-        class="w-full"
-        disabled={submitting}
-        onclick={handleSubmit}
-      >
-        {submitting ? "Submitting..." : "Submit"}
-      </Button>
-    </div>
-  </div>
+				{#each survey.sections as section}
+
+					{#if section.questions?.length}
+
+						<Card class="space-y-7">
+
+							{#if section.title}
+								<h2
+									class="border-b border-slate-100 pb-3 text-sm font-semibold uppercase tracking-wider text-slate-400"
+								>
+									{section.title}
+								</h2>
+							{/if}
+
+							<div class="space-y-8">
+
+								{#each section.questions as question}
+
+									<QuestionField
+										{question}
+										value={
+											answers[question.id] ??
+											(
+												question.type ===
+												'multiple_choice'
+													? []
+													: question.type ===
+														'rating'
+														? 0
+														: ''
+											)
+										}
+										onChange={(value) => {
+											answers = {
+												...answers,
+												[question.id]: value
+											};
+										}}
+										error={errors[question.id]}
+									/>
+
+								{/each}
+
+							</div>
+
+						</Card>
+
+					{/if}
+
+				{/each}
+
+			{:else}
+
+				<Card>
+					<div class="py-10 text-center">
+						<p
+							class="text-sm text-slate-500"
+						>
+							This survey doesn't have any
+							questions yet.
+						</p>
+					</div>
+				</Card>
+
+			{/if}
+
+			{#if loadError}
+				<p class="text-sm text-red-500">
+					{loadError}
+				</p>
+			{/if}
+
+			<Button
+				class="w-full"
+				size="lg"
+				disabled={submitting}
+				onclick={handleSubmit}
+			>
+				{#if submitting}
+					Submitting...
+				{:else}
+					Submit
+				{/if}
+			</Button>
+
+		</div>
+	</div>
+
 {/if}

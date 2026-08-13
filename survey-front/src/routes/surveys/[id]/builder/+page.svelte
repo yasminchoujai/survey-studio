@@ -1,379 +1,566 @@
 <script>
-	import { onMount } from "svelte";
-	import { page } from "$app/state";
-	import { goto } from "$app/navigation";
-	import { get } from "svelte/store";
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 
-	import { useSurveys } from "$lib/stores/surveys.svelte.js";
-	import { useToast } from "$lib/stores/toast.svelte.js";
-	import Modal from "$lib/components/ui/Modal.svelte";
-	import Button from "$lib/components/ui/Button.svelte";
+	import { useSurveys } from '$lib/stores/surveys.svelte';
 
-	import BuilderHeader from "$lib/components/builder/BuilderHeader.svelte";
-	import QuestionTypePicker from "$lib/components/builder/QuestionTypePicker.svelte";
-	import BuilderCanvas from "$lib/components/builder/BuilderCanvas.svelte";
-	import QuestionSettings from "$lib/components/builder/QuestionSettings.svelte";
+	import BuilderHeader from '$lib/components/builder/BuilderHeader.svelte';
+	import QuestionTypePicker from '$lib/components/builder/QuestionTypePicker.svelte';
+	import BuilderCanvas from '$lib/components/builder/BuilderCanvas.svelte';
+	import QuestionSettings from '$lib/components/builder/QuestionSettings.svelte';
 
-	const toast = useToast();
+	import LoadingState from '$lib/components/ui/LoadingState.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 
 	const {
 		getSurvey,
 		addQuestion,
-		addSection,
 		updateQuestion,
 		deleteQuestion,
 		duplicateQuestion,
-		deleteSection,
-		updateSection,
-		reorderSectionQuestions,
+		reorderQuestions,
 		publishSurvey,
 		saveAllQuestions,
-		draftStore,
 		saveDraft,
-		clearDraft,
+		clearDraft
 	} = useSurveys();
 
 	let survey = $state(null);
-	let selectedQuestion = $state(null);
-	let selectedSectionId = $state(null);
 
-	let publishing = $state(false);
-	let publishError = $state("");
-	let isDirty = $state(false);
-	let showLeaveModal = $state(false);
-	let pendingNavigation = $state(null);
+	let selectedQuestionId =
+		$state(null);
+
 	let loading = $state(true);
+
 	let error = $state('');
 
-	let isFirstLoad = $state(true);
+	let publishing =
+		$state(false);
 
-	async function loadSurvey(forceRefresh = false) {
-		if (isFirstLoad || forceRefresh) {
-			loading = true;
-		}
-		error = '';
+	let hasUnsavedChanges =
+		$state(false);
 
-		try {
-			if (survey && !forceRefresh) {
-				console.log('📌 Keeping existing survey');
-				loading = false;
-				return;
-			}
+	function createLocalQuestionKey() {
+		return `local-${crypto.randomUUID()}`;
+	}
 
-			const draft = get(draftStore);
-			
-			if (draft && draft.id === page.params.id) {
-				console.log('✅ Loading from draft');
-				survey = draft;
-				isDirty = true;
-			} else {
-				console.log('🔄 Loading from backend');
-				survey = await getSurvey(page.params.id);
-				isDirty = false;
-			}
+	function markChanged() {
+		hasUnsavedChanges = true;
 
-			if (survey?.sections?.length) {
-				selectedSectionId = survey.sections[0].id;
-			}
-		} catch (err) {
-			error = err?.message ?? 'Failed to load survey.';
-			console.error(err);
-		} finally {
-			loading = false;
-			isFirstLoad = false;
+		if (survey) {
+			saveDraft?.(survey);
 		}
 	}
 
-	onMount(() => {
-		loadSurvey();
-	});
-
-	function selectSection(sectionId) {
-		selectedSectionId = sectionId;
-	}
-
-	function selectQuestion(question) {
-		selectedQuestion = question;
-	}
-
-	async function handleAddQuestion(sectionId, type) {
-		if (!survey) return;
-
-		try {
-			const question = {
-				label: "Untitled question",
-				type,
-				description: "",
-				required: false,
-				placeholder: "",
-				options: type === "single_choice" || type === "multiple_choice"
-					? ["Option 1", "Option 2"]
-					: []
-			};
-
-			const created = await addQuestion(survey, sectionId, question);
-			selectedQuestion = created;
-			saveDraft(survey);
-			isDirty = true;
-			toast.success("Question added");
-		} catch {
-			toast.error("Failed to add question");
-		}
-	}
-
-	async function handleUpdateQuestion(question) {
-		if (!survey) return;
-
-		try {
-			await updateQuestion(survey, question);
-			selectedQuestion = question;
-			saveDraft(survey);
-			isDirty = true;
-			toast.success("Question updated");
-		} catch {
-			toast.error("Failed to update question");
-		}
-	}
-
-	async function handleDeleteQuestion(questionId) {
-		if (!survey) return;
-
-		try {
-			await deleteQuestion(survey, questionId);
-
-			if (selectedQuestion?.id === questionId) {
-				selectedQuestion = null;
-			}
-			saveDraft(survey);
-			isDirty = true;
-			toast.success("Question deleted");
-		} catch {
-			toast.error("Failed to delete question");
-		}
-	}
-
-	async function handleDuplicateQuestion(questionId) {
-		if (!survey) return;
-
-		try {
-			const duplicated = await duplicateQuestion(survey, questionId);
-
-			if (duplicated) {
-				selectedQuestion = duplicated;
-			}
-			saveDraft(survey);
-			isDirty = true;
-			toast.success("Question duplicated");
-		} catch {
-			toast.error("Failed to duplicate question");
-		}
-	}
-
-	async function handleDeleteSection(sectionId) {
-		if (!survey) return;
-
-		try {
-			await deleteSection(survey, sectionId);
-
-			if (selectedSectionId === sectionId) {
-				selectedSectionId = survey.sections[0]?.id ?? null;
-			}
-
-			if (
-				selectedQuestion &&
-				!survey.sections.some(section =>
-					section.questions.some(question => question.id === selectedQuestion.id)
-				)
-			) {
-				selectedQuestion = null;
-			}
-			saveDraft(survey);
-			isDirty = true;
-			toast.success("Section deleted");
-		} catch {
-			toast.error("Failed to delete section");
-		}
-	}
-
-	async function handleAddSection() {
-		if (!survey) return;
-
-		try {
-			const section = await addSection(survey);
-			selectedSectionId = section.id;
-			saveDraft(survey);
-			isDirty = true;
-			toast.success("Section added");
-		} catch {
-			toast.error("Failed to add section");
-		}
-	}
-
-	async function handleQuestionDrop(event, sectionId, targetQuestionId) {
-		event.preventDefault();
-
-		const draggedQuestionId = event.dataTransfer.getData('application/question-id');
-
-		if (!draggedQuestionId || draggedQuestionId === targetQuestionId) {
+	function ensureLocalQuestionIds() {
+		if (
+			!survey ||
+			!Array.isArray(
+				survey.questions
+			)
+		) {
 			return;
 		}
 
-		const section = survey.sections.find((s) => s.id === sectionId);
+		const usedKeys =
+			new Set();
 
-		if (!section) return;
+		survey.questions =
+			survey.questions.map(
+				(question) => {
+					if (question.id) {
+						const localId =
+							question.__localId ??
+							question.id;
 
-		const fromIndex = section.questions.findIndex((q) => q.id === draggedQuestionId);
-		const toIndex = section.questions.findIndex((q) => q.id === targetQuestionId);
+						usedKeys.add(
+							localId
+						);
 
-		if (fromIndex === -1 || toIndex === -1) return;
+						return {
+							...question,
+							__localId:
+								localId
+						};
+					}
 
-		const [question] = section.questions.splice(fromIndex, 1);
-		section.questions.splice(toIndex, 0, question);
+					if (
+						question.__localId &&
+						!usedKeys.has(
+							question.__localId
+						)
+					) {
+						usedKeys.add(
+							question.__localId
+						);
 
-		await reorderSectionQuestions(survey, section);
-		saveDraft(survey);
+						return question;
+					}
+
+					const localId =
+						createLocalQuestionKey();
+
+					usedKeys.add(
+						localId
+					);
+
+					return {
+						...question,
+						__localId:
+							localId
+					};
+				}
+			);
+
+		saveDraft?.(survey);
 	}
 
-	async function handleUpdateSectionTitle(sectionId, title) {
-		if (!survey) return;
-
-		const section = survey.sections.find((s) => s.id === sectionId);
-		if (!section) return;
+	async function loadSurvey() {
+		loading = true;
+		error = '';
 
 		try {
-			section.title = title;
-			await updateSection(survey, section);
-			saveDraft(survey);
-			isDirty = true;
-			toast.success("Section renamed");
-		} catch {
-			toast.error("Failed to rename section");
+			const id =
+				page.params.id;
+
+			const result =
+				await getSurvey(id);
+
+			survey = result;
+
+			ensureLocalQuestionIds();
+
+			selectedQuestionId =
+				null;
+
+			hasUnsavedChanges =
+				true;
+		} catch (err) {
+			error =
+				err?.message ??
+				'Failed to load survey';
+		} finally {
+			loading = false;
 		}
 	}
 
-	async function handlePublish() {
+	function handleAddQuestion(
+		type
+	) {
+		if (
+			!survey ||
+			!type
+		) {
+			return;
+		}
+
+		const question =
+			addQuestion(
+				survey,
+				type
+			);
+
+		if (!question) {
+			return;
+		}
+
+		question.__localId =
+			createLocalQuestionKey();
+
+		selectedQuestionId =
+			question.__localId;
+
+		markChanged();
+	}
+
+	function handleSelectQuestion(
+		question
+	) {
+		if (!question) return;
+
+		selectedQuestionId =
+			question.id ??
+			question.__localId;
+	}
+
+	let selectedQuestion =
+		$derived(
+			survey?.questions?.find(
+				(question) =>
+					(
+						question.id ??
+						question.__localId
+					) ===
+					selectedQuestionId
+			) ?? null
+		);
+
+	function handleUpdateQuestion(
+		updatedQuestion
+	) {
+		if (
+			!survey ||
+			!updatedQuestion
+		) {
+			return;
+		}
+
+		const questionKey =
+			updatedQuestion.id ??
+			updatedQuestion.__localId;
+
+		const index =
+			survey.questions.findIndex(
+				(question) =>
+					(
+						question.id ??
+						question.__localId
+					) ===
+					questionKey
+			);
+
+		if (index === -1) {
+			return;
+		}
+
+		const updated = {
+			...survey.questions[
+				index
+			],
+			...updatedQuestion,
+
+			__localId:
+				survey.questions[index]
+					.__localId ??
+				updatedQuestion.__localId ??
+				updatedQuestion.id ??
+				createLocalQuestionKey()
+		};
+
+		survey.questions =
+			survey.questions.map(
+				(question, i) =>
+					i === index
+						? updated
+						: question
+			);
+
+		selectedQuestionId =
+			updated.id ??
+			updated.__localId;
+
+		markChanged();
+	}
+
+	function handleDeleteQuestion(
+		question
+	) {
+		if (
+			!survey ||
+			!question
+		) {
+			return;
+		}
+
+		const key =
+			question.id ??
+			question.__localId;
+
+		deleteQuestion(
+			survey,
+			question
+		);
+
+		if (
+			selectedQuestionId ===
+			key
+		) {
+			selectedQuestionId =
+				null;
+		}
+
+		markChanged();
+	}
+
+	function handleDuplicateQuestion(
+		question
+	) {
+		if (
+			!survey ||
+			!question
+		) {
+			return;
+		}
+
+		const duplicated =
+			duplicateQuestion(
+				survey,
+				question
+			);
+
+		if (!duplicated) {
+			return;
+		}
+
+		duplicated.__localId =
+			createLocalQuestionKey();
+
+		selectedQuestionId =
+			duplicated.__localId;
+
+		markChanged();
+	}
+
+	function handleReorderQuestions(
+		fromIndex,
+		toIndex
+	) {
 		if (!survey) return;
 
+		if (
+			fromIndex ===
+				undefined ||
+			toIndex ===
+				undefined
+		) {
+			return;
+		}
+
+		if (
+			fromIndex ===
+				toIndex ||
+			fromIndex < 0 ||
+			toIndex < 0 ||
+			fromIndex >=
+				survey.questions.length ||
+			toIndex >=
+				survey.questions.length
+		) {
+			return;
+		}
+
+		const questions = [
+			...survey.questions
+		];
+
+		const [
+			movedQuestion
+		] =
+			questions.splice(
+				fromIndex,
+				1
+			);
+
+		questions.splice(
+			toIndex,
+			0,
+			movedQuestion
+		);
+
+		survey.questions =
+			questions;
+
+		markChanged();
+	}
+
+	async function handleUpdateSurvey() {
+		if (
+			!survey ||
+			publishing
+		) {
+			return;
+		}
+
 		publishing = true;
-		publishError = "";
+		error = '';
 
 		try {
-			await saveAllQuestions(survey);
+			await saveAllQuestions(
+				survey
+			);
 
-			if (survey.status !== "Published") {
-				await publishSurvey(survey);
-			}
-
-			isDirty = false;
-			clearDraft();
-			toast.success("Survey published successfully");
-			goto("/dashboard");
+			hasUnsavedChanges =
+				false;
 		} catch (err) {
-			console.error("Failed to save survey:", err);
-			publishError = err?.message ?? "Failed to save survey.";
-			toast.error(publishError);
+			error =
+				err?.message ??
+				'Failed to update survey';
 		} finally {
 			publishing = false;
 		}
 	}
 
-	function handleLeave(path = "/dashboard") {
-		if (!isDirty) {
-			goto(path);
+	async function handleHeaderAction() {
+		if (!survey) return;
+
+		if (
+			survey.status ===
+			'Published'
+		) {
+			await handleUpdateSurvey();
+
 			return;
 		}
-		pendingNavigation = path;
-		showLeaveModal = true;
+
+		await handlePublish();
 	}
 
-	function confirmLeave() {
-		showLeaveModal = false;
-		isDirty = false;
-		clearDraft();
-		goto(pendingNavigation || "/dashboard");
-	}
-
-	function cancelLeave() {
-		showLeaveModal = false;
-		pendingNavigation = null;
-	}
-
-	$effect(() => {
-		if (survey && isDirty) {
-			saveDraft(survey);
+	async function handlePublish() {
+		if (
+			!survey ||
+			publishing
+		) {
+			return;
 		}
-	});
+
+		publishing = true;
+		error = '';
+
+		try {
+			const updatedSurvey =
+				await publishSurvey(
+					survey
+				);
+
+			if (updatedSurvey) {
+				survey = {
+					...survey,
+					...updatedSurvey,
+
+					status:
+						'Published'
+				};
+
+				ensureLocalQuestionIds();
+			}
+
+			hasUnsavedChanges =
+				false;
+		} catch (err) {
+			error =
+				err?.message ??
+				'Failed to publish survey';
+		} finally {
+			publishing = false;
+		}
+	}
+
+	function handleLeave(
+		destination
+	) {
+		goto(destination);
+	}
 
 	$effect(() => {
-		const unload = (e) => {
-			if (isDirty) {
-				e.preventDefault();
-				e.returnValue = "You have unsaved changes. Are you sure you want to leave?";
-				return e.returnValue;
-			}
-		};
-		window.addEventListener("beforeunload", unload);
-		return () => window.removeEventListener("beforeunload", unload);
+		const id =
+			page.params.id;
+
+		if (id) {
+			loadSurvey();
+		}
 	});
 </script>
 
-<!-- Leave Modal using Modal component -->
-<Modal open={showLeaveModal}>
-	<div class="text-center">
-		<h3 class="text-lg font-semibold text-slate-900">Discard changes?</h3>
-		<p class="mt-2 text-sm text-slate-500">
-			You have unsaved changes. If you leave now, your edits will be lost.
-		</p>
-		<div class="mt-6 flex justify-center gap-3">
-			<Button variant="outline" onclick={cancelLeave}>
-				Stay
-			</Button>
-			<Button onclick={confirmLeave}>
-				Leave
-			</Button>
-		</div>
+{#if loading}
+	<div
+		class="flex h-screen items-center justify-center bg-slate-50"
+	>
+		<LoadingState />
 	</div>
-</Modal>
 
-{#if survey}
-	<div class="flex h-screen flex-col bg-slate-50">
-<BuilderHeader
-	{survey}
-	onPublish={handlePublish}
-	{publishing}
-	hasUnsavedChanges={isDirty}
-	onLeave={handleLeave}
-/>
-		{#if publishError}
-			<div class="border-b border-red-100 bg-red-50 px-5 py-2 text-sm text-red-600">
-				{publishError}
-			</div>
-		{/if}
+{:else if error && !survey}
+	<div
+		class="flex h-screen items-center justify-center bg-slate-50"
+	>
+		<ErrorState
+			message={error}
+			onRetry={loadSurvey}
+		/>
+	</div>
 
-		<div class="flex flex-1 overflow-hidden">
+{:else if survey}
+	<div
+		class="flex h-screen flex-col overflow-hidden bg-slate-50"
+	>
+		<BuilderHeader
+			{survey}
+			onPublish={handleHeaderAction}
+			{publishing}
+			{hasUnsavedChanges}
+			onLeave={handleLeave}
+		/>
+
+		<div
+			class="flex min-h-0 flex-1"
+		>
 			<QuestionTypePicker
-				sectionId={selectedSectionId}
-				onAddQuestion={handleAddQuestion}
+				onAddQuestion={
+					handleAddQuestion
+				}
 			/>
 
 			<BuilderCanvas
 				{survey}
-				{selectQuestion}
-				{selectSection}
-				addSection={handleAddSection}
-				deleteSection={handleDeleteSection}
-				deleteQuestion={handleDeleteQuestion}
-				duplicateQuestion={handleDuplicateQuestion}
-				onDrop={handleQuestionDrop}
-				onAddQuestion={handleAddQuestion}
-				updateSectionTitle={handleUpdateSectionTitle}
-				selectedQuestionId={selectedQuestion?.id}
+				selectQuestion={
+					handleSelectQuestion
+				}
+				deleteQuestion={
+					handleDeleteQuestion
+				}
+				duplicateQuestion={
+					handleDuplicateQuestion
+				}
+				onAddQuestion={
+					handleAddQuestion
+				}
+				reorderQuestions={
+					handleReorderQuestions
+				}
 			/>
 
-			<QuestionSettings
-				question={selectedQuestion}
-				updateQuestion={handleUpdateQuestion}
-			/>
+			{#if selectedQuestion}
+				<QuestionSettings
+					question={
+						selectedQuestion
+					}
+					onUpdate={
+						handleUpdateQuestion
+					}
+				/>
+			{:else}
+				<aside
+					class="hidden w-72 shrink-0 border-l border-[#E8E2F2] bg-white lg:block"
+				>
+					<div
+						class="flex h-full items-center justify-center p-6 text-center"
+					>
+						<div>
+							<div
+								class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#F3ECFA]"
+							>
+								<span
+									class="text-xl text-[#9B7EBD]"
+								>
+									⚙
+								</span>
+							</div>
+
+							<h3
+								class="mt-4 text-sm font-semibold text-[#3B1E54]"
+							>
+								Question settings
+							</h3>
+
+							<p
+								class="mt-2 text-xs leading-5 text-slate-500"
+							>
+								Select a question to
+								edit its settings.
+							</p>
+						</div>
+					</div>
+				</aside>
+			{/if}
 		</div>
 	</div>
 {/if}

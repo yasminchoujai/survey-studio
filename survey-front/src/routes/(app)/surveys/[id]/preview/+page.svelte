@@ -12,84 +12,124 @@
 	import PreviewHeader from '$lib/components/preview/PreviewHeader.svelte';
 	import QuestionField from '$lib/components/public/QuestionField.svelte';
 
-	const { getSurvey } = useSurveys();
+	const {
+		getSurvey
+	} = useSurveys();
 
-	let survey = $state(page.state?.survey ?? null);
+	let survey =
+		$state(
+			page.state?.survey ??
+				null
+		);
 
-	let loading = $state(!survey);
-	let error = $state('');
+	let loading =
+		$state(!survey);
 
-	let answers = $state({});
-	let errors = $state({});
+	let error =
+		$state('');
 
+	let answers =
+		$state({});
 
-	function initializeAnswers(data) {
+	let errors =
+		$state({});
+
+	function initializeAnswers(
+		data
+	) {
 		const initial = {};
 
-		for (const section of data.sections ?? []) {
-			for (const question of section.questions ?? []) {
-
-				if (question.type === 'multiple_choice') {
-					initial[question.id] = [];
-
-				} else if (question.type === 'rating') {
-					initial[question.id] = 0;
-
-				} else {
-					initial[question.id] = '';
-				}
+		for (
+			const question of
+				data?.questions ?? []
+		) {
+			if (
+				question.type ===
+				'multiple_choice'
+			) {
+				initial[
+					getQuestionKey(
+						question
+					)
+				] = [];
+			} else if (
+				question.type ===
+				'rating'
+			) {
+				initial[
+					getQuestionKey(
+						question
+					)
+				] = 0;
+			} else {
+				initial[
+					getQuestionKey(
+						question
+					)
+				] = '';
 			}
 		}
 
 		return initial;
 	}
 
+	function getQuestionKey(
+		question
+	) {
+		return (
+			question?.id ??
+			question?.__localId
+		);
+	}
 
 	async function loadSurvey() {
 		loading = true;
 		error = '';
 
 		try {
-			survey = await getSurvey(page.params.id);
+			const id =
+				page.params.id;
 
-			answers = initializeAnswers(survey);
+			survey =
+				await getSurvey(id);
 
+			answers =
+				initializeAnswers(
+					survey
+				);
 		} catch (err) {
-			error = err?.message ?? 'Failed to load survey.';
-
+			error =
+				err?.message ??
+				'Failed to load survey.';
 		} finally {
 			loading = false;
 		}
 	}
 
-
 	onMount(() => {
-
 		if (survey) {
+			answers =
+				initializeAnswers(
+					survey
+				);
 
-			answers = initializeAnswers(survey);
 			loading = false;
 
-		} else {
-
-			loadSurvey();
-
+			return;
 		}
+
+		loadSurvey();
 	});
 </script>
 
-
 {#if loading}
-
 	<LoadingState
 		fullScreen
 		message="Loading preview..."
 		description="Preparing your survey."
 	/>
 
-
 {:else if error}
-
 	<ErrorState
 		title="Couldn't load preview"
 		message={error}
@@ -97,98 +137,109 @@
 		onRetry={loadSurvey}
 	/>
 
-
 {:else if survey}
+	<div
+		class="min-h-screen bg-slate-50"
+	>
+		<PreviewHeader
+			{survey}
+		/>
 
-	<div class="min-h-screen bg-slate-50">
-
-		<PreviewHeader {survey} />
-
-
-		<div class="mx-auto max-w-2xl space-y-6 px-4 py-10">
-
-
+		<div
+			class="mx-auto max-w-2xl space-y-6 px-4 py-10"
+		>
 			<Card class="space-y-5">
-
-				<div class="flex items-center gap-3">
-
+				<div
+					class="flex items-center gap-3"
+				>
 					<div>
-
-						<h1 class="text-2xl font-bold text-slate-900">
+						<h1
+							class="text-2xl font-bold text-slate-900"
+						>
 							{survey.title}
 						</h1>
 
-
 						{#if survey.description}
-
-							<p class="mt-1 text-slate-500">
-								{survey.description}
+							<p
+								class="mt-1 text-slate-500"
+							>
+								{
+									survey.description
+								}
 							</p>
-
 						{/if}
-
 					</div>
-
 				</div>
-
 
 				<div
 					class="rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-700"
 				>
-					This is a preview of your survey. Responses are not saved.
+					This is a preview of your
+					survey. Responses are not
+					saved.
 				</div>
-
 			</Card>
 
-
-
-			{#each survey.sections ?? [] as section}
-
-				{#if section.questions?.length}
-
-					<Card class="space-y-6">
-
-
-						<h2
-							class="text-sm font-semibold uppercase tracking-wide text-slate-400"
-						>
-							{section.title}
-						</h2>
-
-
-
-						{#each section.questions as question}
-
-
-							<QuestionField
-								{question}
-								value={
-									answers[question.id] ??
-									(
-										question.type === 'multiple_choice'
-											? []
-											: question.type === 'rating'
-												? 0
-												: ''
+			{#if survey.questions?.length}
+				<Card
+					class="space-y-6"
+				>
+					{#each survey.questions as question (
+						question.id ??
+						question.__localId
+					)}
+						<QuestionField
+							{question}
+							value={
+								answers[
+									getQuestionKey(
+										question
 									)
-								}
-								onChange={(value) => {
-									answers[question.id] = value;
-								}}
-								error={errors[question.id]}
-							/>
-
-
-						{/each}
-
-
-					</Card>
-
-				{/if}
-
-			{/each}
-
-
+								] ??
+								(
+									question.type ===
+									'multiple_choice'
+										? []
+										: question.type ===
+												'rating'
+											? 0
+											: ''
+								)
+							}
+							onChange={(
+								value
+							) => {
+								answers[
+									getQuestionKey(
+										question
+									)
+								] =
+									value;
+							}}
+							error={
+								errors[
+									getQuestionKey(
+										question
+									)
+								]
+							}
+						/>
+					{/each}
+				</Card>
+			{:else}
+				<Card>
+					<div
+						class="py-12 text-center"
+					>
+						<p
+							class="text-sm text-slate-500"
+						>
+							This survey doesn't
+							have any questions yet.
+						</p>
+					</div>
+				</Card>
+			{/if}
 
 			<Button
 				class="w-full"
@@ -198,10 +249,6 @@
 			>
 				Preview Mode
 			</Button>
-
-
 		</div>
-
 	</div>
-
 {/if}
