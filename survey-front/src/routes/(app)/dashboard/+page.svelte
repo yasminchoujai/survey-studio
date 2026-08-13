@@ -42,7 +42,6 @@
 		try {
 			await load();
 		} catch (err) {
-			console.error(err);
 			error = err?.message || 'Failed to load surveys.';
 		} finally {
 			loading = false;

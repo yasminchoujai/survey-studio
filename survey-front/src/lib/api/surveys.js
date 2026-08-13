@@ -1,35 +1,75 @@
-import { request } from './http';
+import { request } from './http.js';
 
-export function getSurveys() {
+
+
+export async function getSurveys() {
 	return request('/surveys');
 }
 
-export function getSurvey(id) {
+
+
+export async function getSurvey(id) {
+	if (!id) {
+		throw new Error('Survey ID is missing');
+	}
+
 	return request(`/surveys/${id}`);
 }
 
-export function createSurvey(data) {
+
+export async function createSurvey(data) {
 	return request('/surveys', {
 		method: 'POST',
 		body: JSON.stringify(data)
 	});
 }
 
-export function updateSurvey(id, data) {
+
+
+export async function updateSurvey(id, data) {
+	if (!id) {
+		throw new Error('Survey ID is missing');
+	}
+
+	console.log('💾 PUT /api/surveys/:id', id, data);
+
 	return request(`/surveys/${id}`, {
 		method: 'PUT',
 		body: JSON.stringify(data)
 	});
 }
 
-export function deleteSurvey(id) {
+
+
+export async function deleteSurvey(id) {
+	if (!id) {
+		throw new Error('Survey ID is missing');
+	}
+
 	return request(`/surveys/${id}`, {
 		method: 'DELETE'
 	});
 }
 
-export function publishSurvey(id) {
+
+
+export async function publishSurvey(id) {
+	if (!id) {
+		throw new Error('Survey ID is missing');
+	}
+
 	return request(`/surveys/${id}/publish`, {
+		method: 'PATCH'
+	});
+}
+
+
+export async function unpublishSurvey(id) {
+	if (!id) {
+		throw new Error('Survey ID is missing');
+	}
+
+	return request(`/surveys/${id}/unpublish`, {
 		method: 'PATCH'
 	});
 }

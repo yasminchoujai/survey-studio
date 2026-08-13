@@ -4,7 +4,8 @@
 		value = $bindable(''),
 		placeholder = '',
 		disabled = false,
-		class: className = ''
+		class: className = '',
+		oninput
 	} = $props();
 </script>
 
@@ -13,5 +14,6 @@
 	bind:value
 	{placeholder}
 	{disabled}
+	oninput={oninput}
 	class={`w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100 ${className}`}
 ></textarea>

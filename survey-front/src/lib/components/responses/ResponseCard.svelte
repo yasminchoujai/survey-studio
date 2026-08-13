@@ -21,23 +21,30 @@
 			minute: '2-digit'
 		});
 	}
+
+	let questionCount = $derived(
+		Array.isArray(survey.questions)
+			? survey.questions.length
+			: 0
+	);
 </script>
 
 <Card padding="none" class="overflow-hidden border border-slate-200 bg-white">
 
 	<button
+		type="button"
 		onclick={() => (open = !open)}
 		class="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition hover:bg-slate-50"
 	>
-
 		<div class="flex min-w-0 items-center gap-3">
 
-			<div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600">
-				<User size={16}/>
+			<div
+				class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-600"
+			>
+				<User size={16} />
 			</div>
 
 			<div class="min-w-0">
-
 				<p class="truncate text-sm font-semibold text-slate-900">
 					{response.respondent || `Response #${index + 1}`}
 				</p>
@@ -45,7 +52,6 @@
 				<p class="text-xs text-slate-500">
 					{formatDateTime(response.submittedAt)}
 				</p>
-
 			</div>
 
 		</div>
@@ -53,77 +59,77 @@
 		<div class="flex shrink-0 items-center gap-3">
 
 			<Badge variant="info">
-				{survey.sections.reduce(
-					(count, section) => count + (section.questions?.length ?? 0),
-					0
-				)} questions
+				{questionCount} questions
 			</Badge>
 
 			<ChevronDown
 				size={18}
-				class={`text-slate-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+				class={`text-slate-400 transition-transform duration-200 ${
+					open ? 'rotate-180' : ''
+				}`}
 			/>
 
 		</div>
-
 	</button>
 
 	{#if open}
 
-		<div class="space-y-5 border-t border-slate-100 px-5 py-5">
+		<div class="border-t border-slate-100 px-5 py-5">
 
-			{#each survey.sections as section}
+			{#if !survey.questions?.length}
 
-				{#if section.questions?.length}
+				<div class="py-6 text-center">
+					<p class="text-sm text-slate-400">
+						No questions found for this survey.
+					</p>
+				</div>
 
-					<div class="space-y-4">
+			{:else}
 
-						<h4 class="text-xs font-semibold uppercase tracking-wide text-slate-400">
-							{section.title}
-						</h4>
+				<div class="space-y-4">
 
-						{#each section.questions as question}
+					{#each survey.questions as question}
 
-							{@const value = getAnswer(response, question.id)}
-							{@const formatted = formatAnswer(question, value)}
+						{@const value = getAnswer(response, question.id)}
+						{@const formatted = formatAnswer(question, value)}
 
-							<div class="rounded-lg bg-slate-50 p-3">
+						<div class="rounded-lg bg-slate-50 p-4">
 
-								<p class="text-sm font-medium text-slate-700">
-									{question.label}
+							<p class="text-sm font-medium text-slate-700">
+								{question.label}
+							</p>
+
+							{#if formatted === null || formatted === undefined || formatted === ''}
+
+								<p class="mt-1 text-sm italic text-slate-400">
+									No answer
 								</p>
 
-								{#if formatted === null}
+							{:else if Array.isArray(formatted)}
 
-									<p class="mt-1 text-sm italic text-slate-400">
-										No answer
-									</p>
+								<div class="mt-2 flex flex-wrap gap-1.5">
+									{#each formatted as option}
+										<Badge variant="info">
+											{option}
+										</Badge>
+									{/each}
+								</div>
 
-								{:else if Array.isArray(formatted)}
+							{:else}
 
-									<div class="mt-2 flex flex-wrap gap-1.5">
-										{#each formatted as option}
-											<Badge variant="info">{option}</Badge>
-										{/each}
-									</div>
+								<p class="mt-1 text-sm text-slate-900">
+									{formatted}
+								</p>
 
-								{:else}
+							{/if}
 
-									<p class="mt-1 text-sm text-slate-900">
-										{formatted}
-									</p>
+						</div>
 
-								{/if}
+					{/each}
 
-							</div>
+				</div>
 
-						{/each}
-
-					</div>
-
-				{/if}
-
-			{/each}
+			{/if}
 
 		</div>
 

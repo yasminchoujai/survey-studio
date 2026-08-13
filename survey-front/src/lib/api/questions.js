@@ -1,44 +1,32 @@
-import { request } from './http';
+import { request } from './http.js';
 
-export function getQuestions(surveyId, sectionId) {
-	return request(
-		`/surveys/${surveyId}/sections/${sectionId}/questions`
-	);
+export async function getQuestions(surveyId) {
+	return request(`/surveys/${surveyId}/questions`);
 }
 
-export function createQuestion(surveyId, sectionId, question) {
-	return request(
-		`/surveys/${surveyId}/sections/${sectionId}/questions`,
-		{
-			method: 'POST',
-			body: JSON.stringify(question)
-		}
-	);
+export async function createQuestion(surveyId, question) {
+	return request(`/surveys/${surveyId}/questions`, {
+		method: 'POST',
+		body: JSON.stringify(question)
+	});
 }
 
-export function updateQuestion(id, question) {
-	return request(`/questions/${id}`, {
+export async function updateQuestion(questionId, question) {
+	return request(`/questions/${questionId}`, {
 		method: 'PUT',
 		body: JSON.stringify(question)
 	});
 }
 
-export function deleteQuestion(id) {
-	return request(`/questions/${id}`, {
+export async function deleteQuestion(questionId) {
+	return request(`/questions/${questionId}`, {
 		method: 'DELETE'
 	});
 }
 
-/**
-
- * PATCH /surveys/:surveyId/sections/:sectionId/questions/reorder
- */
-export function reorderQuestions(surveyId, sectionId, order) {
-	return request(
-		`/surveys/${surveyId}/sections/${sectionId}/questions/reorder`,
-		{
-			method: 'PATCH',
-			body: JSON.stringify({ order })
-		}
-	);
+export async function reorderQuestions(surveyId, order) {
+	return request(`/surveys/${surveyId}/questions/reorder`, {
+		method: 'PATCH',
+		body: JSON.stringify({ order })
+	});
 }

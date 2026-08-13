@@ -1,58 +1,98 @@
 <script>
-  import { goto } from "$app/navigation";
-  import { ArrowLeft, Eye, Pencil } from "lucide-svelte";
+	import { goto } from '$app/navigation';
+	import {
+		ArrowLeft,
+		Eye,
+		Pencil
+	} from 'lucide-svelte';
 
-  import Button from "$lib/components/ui/Button.svelte";
-  import StatusBadge from "$lib/components/dashboard/StatusBadge.svelte";
+	import Button from '$lib/components/ui/Button.svelte';
+	import StatusBadge from '$lib/components/dashboard/StatusBadge.svelte';
 
-  let { survey } = $props();
+	let { survey } = $props();
 
-  function back() {
-    goto("/dashboard");
-  }
+	function back() {
+		goto('/dashboard');
+	}
 
-  function edit() {
-    goto(`/surveys/${survey.id}/builder`);
-  }
+	function edit() {
+		goto(`/surveys/${survey.id}/builder`);
+	}
 
-  function preview() {
-    goto(`/surveys/${survey.id}/preview`);
-  }
+	function preview() {
+		goto(`/surveys/${survey.id}/preview`);
+	}
 
-
+	const responseCount = $derived(
+		survey?.responses ?? 0
+	);
 </script>
 
 <header
-  class="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-5"
+	class="flex min-h-14 items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-2"
 >
-  <div class="flex min-w-0 items-center gap-3">
-    <Button variant="ghost" size="icon" onclick={back}>
-      <ArrowLeft size={18} />
-    </Button>
+	<!-- LEFT -->
 
-    <div class="flex min-w-0 items-center gap-3">
-      <h1 class="truncate text-sm font-medium text-slate-800">
-        {survey.title}
-      </h1>
+	<div
+		class="flex min-w-0 items-center gap-3"
+	>
+		<Button
+			variant="ghost"
+			size="icon"
+			onclick={back}
+		>
+			<ArrowLeft size={18} />
+		</Button>
 
-      <StatusBadge status={survey.status} />
+		<div
+			class="flex min-w-0 items-center gap-3"
+		>
+			<h1
+				class="truncate text-sm font-medium text-slate-800"
+			>
+				{survey.title}
+			</h1>
 
-      <span class="hidden text-xs text-slate-500 sm:block">
-        • {survey.responses ?? 0}
-        response{survey.responses === 1 ? "" : "s"}
-      </span>
-    </div>
-  </div>
+			<StatusBadge
+				status={survey.status}
+			/>
 
-  <div class="flex items-center gap-2">
-    <Button variant="outline" onclick={preview}>
-      <Eye size={16} />
-      Preview
-    </Button>
+			<span
+				class="hidden text-xs text-slate-500 sm:block"
+			>
+				•
+				{responseCount}
+				response{responseCount === 1
+					? ''
+					: 's'}
+			</span>
+		</div>
+	</div>
 
-    <Button variant="outline" onclick={edit}>
-      <Pencil size={16} />
-      Edit
-    </Button>
-  </div>
+
+	<!-- ACTIONS -->
+
+	<div class="flex shrink-0 items-center gap-2">
+
+		<Button
+			variant="outline"
+			onclick={preview}
+		>
+			<Eye size={16} />
+			<span class="hidden sm:inline">
+				Preview
+			</span>
+		</Button>
+
+		<Button
+			variant="outline"
+			onclick={edit}
+		>
+			<Pencil size={16} />
+			<span class="hidden sm:inline">
+				Edit
+			</span>
+		</Button>
+
+	</div>
 </header>
