@@ -1,9 +1,11 @@
-import { request } from './http';
+import { request } from './http.js';
 
-export function getAllSurveysStatistics() {
-	return request('/statistics');
-}
+import { statisticsSchema } from '$lib/schemas/statistics.js';
 
-export function getSurveyStatistics(surveyId) {
-	return request(`/surveys/${surveyId}/statistics`);
+import { validate } from '$lib/utils/validate.js';
+
+export async function getAllSurveysStatistics() {
+	const data = await request('/statistics');
+
+	return validate(statisticsSchema, data);
 }
