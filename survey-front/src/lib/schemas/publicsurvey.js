@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { questionSchema } from './question.js';
 
-export const surveySchema = z.object({
+export const publicSurveySchema = z.object({
 	id: z.string().uuid(),
 
 	title: z.string(),
@@ -15,7 +16,5 @@ export const surveySchema = z.object({
 
 	publishedAt: z.string().nullable().optional(),
 
-	responses: z.number().optional()
+	questions: z.array(questionSchema)
 });
-
-export const surveysSchema = z.array(surveySchema);
