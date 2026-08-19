@@ -22,28 +22,25 @@
 	);
 
 	let questionCount = $derived(
-		Array.isArray(
-			survey?.questions
-		)
+		Array.isArray(survey?.questions)
 			? survey.questions.length
 			: 0
 	);
 
+	/*
+	 * BACK TO DASHBOARD
+	 *
+	 * IMPORTANT:
+	 * Do NOT use goto() here.
+	 *
+	 * The builder page decides whether to:
+	 * - show the discard modal
+	 * - or go directly to dashboard
+	 */
 	function back() {
-		console.log(
-			'⬅️ Leaving builder for dashboard'
-		);
+		console.log('⬅️ Dashboard button clicked');
 
-		/*
-		IMPORTANT:
-		Do NOT clear the draft here.
-
-		If you want to discard changes,
-		that should happen explicitly when
-		leaving the dashboard flow.
-		*/
-
-		onLeave?.('/dashboard');
+		onLeave?.();
 	}
 
 	function preview() {
@@ -54,30 +51,45 @@
 			survey.id
 		);
 
-		/*
-		Pass the current local survey to Preview.
-
-		No backend call.
-		*/
-
-		goto(
-			`/surveys/${survey.id}/preview`,
-			{
-				state: {
-					survey: JSON.parse(
-						JSON.stringify(
-							survey
-						)
-					)
-				}
+		goto(`/surveys/${survey.id}/preview`, {
+			state: {
+				survey: JSON.parse(
+					JSON.stringify(survey)
+				)
 			}
-		);
+		});
 	}
 
-	function handleSave() {
-		if (publishing) return;
+	async function handleSave() {
+		if (
+			publishing ||
+			!survey?.id
+		) {
+			return;
+		}
 
-		onPublish?.();
+		try {
+			console.log(
+				isPublished
+					? '🔄 Updating survey...'
+					: '🚀 Publishing survey...'
+			);
+
+			/*
+			 * The builder page handles:
+			 *
+			 * 1. API request
+			 * 2. clearing draft
+			 * 3. redirecting to dashboard
+			 */
+			await onPublish?.();
+
+		} catch (error) {
+			console.error(
+				'❌ Failed to save survey:',
+				error
+			);
+		}
 	}
 </script>
 
@@ -95,9 +107,7 @@
 			onclick={back}
 			title="Back to dashboard"
 		>
-			<ArrowLeft
-				class="h-5 w-5"
-			/>
+			<ArrowLeft class="h-5 w-5" />
 		</Button>
 
 		<div
@@ -111,6 +121,7 @@
 			</h1>
 
 			{#if isPublished}
+
 				<div
 					class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700"
 				>
@@ -120,7 +131,9 @@
 
 					Published
 				</div>
+
 			{:else}
+
 				<div
 					class="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700"
 				>
@@ -130,6 +143,7 @@
 
 					Draft
 				</div>
+
 			{/if}
 
 			<span
@@ -142,11 +156,13 @@
 			</span>
 
 			{#if hasUnsavedChanges}
+
 				<span
 					class="text-xs text-amber-600"
 				>
 					Unsaved changes
 				</span>
+
 			{/if}
 		</div>
 	</div>
@@ -159,7 +175,10 @@
 		<Button
 			variant="outline"
 			onclick={preview}
-			disabled={!survey?.id}
+			disabled={
+				!survey?.id ||
+				publishing
+			}
 		>
 			<Eye class="h-4 w-4" />
 
@@ -174,20 +193,30 @@
 			}
 		>
 			{#if isPublished}
+
 				<Save class="h-4 w-4" />
+
 			{:else}
+
 				<Send class="h-4 w-4" />
+
 			{/if}
 
 			<span>
 				{#if publishing}
+
 					{isPublished
 						? 'Updating...'
 						: 'Publishing...'}
+
 				{:else if isPublished}
+
 					Update
+
 				{:else}
+
 					Publish
+
 				{/if}
 			</span>
 		</Button>

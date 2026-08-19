@@ -23,7 +23,7 @@
 			rounded-xl
 			border-[#D4BEE4]
 			bg-white
-			pl-14
+			pl-5
 			pr-4
 			text-sm
 			text-[#3B1E54]

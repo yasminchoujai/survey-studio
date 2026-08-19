@@ -9,7 +9,7 @@
 	import BuilderCanvas from '$lib/components/builder/BuilderCanvas.svelte';
 	import QuestionSettings from '$lib/components/builder/QuestionSettings.svelte';
 
-	import LoadingState from '$lib/components/ui/LoadingState.svelte';
+	import BuilderSkeleton from '$lib/components/builder/BuilderSkeleton.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 
 	const {
@@ -18,7 +18,6 @@
 		updateQuestion,
 		deleteQuestion,
 		duplicateQuestion,
-		reorderQuestions,
 		publishSurvey,
 		saveAllQuestions,
 		saveDraft,
@@ -27,23 +26,28 @@
 
 	let survey = $state(null);
 
-	let selectedQuestionId =
-		$state(null);
+	let selectedQuestionId = $state(null);
 
 	let loading = $state(true);
-
 	let error = $state('');
 
-	let publishing =
-		$state(false);
+	let publishing = $state(false);
 
-	let hasUnsavedChanges =
-		$state(false);
+	let hasUnsavedChanges = $state(false);
+
+	let showDiscardModal = $state(false);
 
 	function createLocalQuestionKey() {
 		return `local-${crypto.randomUUID()}`;
 	}
 
+	/*
+	 * IMPORTANT
+	 *
+	 * Changes are saved ONLY to the local draft store.
+	 *
+	 * They are NOT sent to the backend.
+	 */
 	function markChanged() {
 		hasUnsavedChanges = true;
 
@@ -53,66 +57,44 @@
 	}
 
 	function ensureLocalQuestionIds() {
-		if (
-			!survey ||
-			!Array.isArray(
-				survey.questions
-			)
-		) {
+		if (!survey || !Array.isArray(survey.questions)) {
 			return;
 		}
 
-		const usedKeys =
-			new Set();
+		const usedKeys = new Set();
 
-		survey.questions =
-			survey.questions.map(
-				(question) => {
-					if (question.id) {
-						const localId =
-							question.__localId ??
-							question.id;
+		survey.questions = survey.questions.map((question) => {
+			if (question.id) {
+				const localId =
+					question.__localId ??
+					question.id;
 
-						usedKeys.add(
-							localId
-						);
+				usedKeys.add(localId);
 
-						return {
-							...question,
-							__localId:
-								localId
-						};
-					}
+				return {
+					...question,
+					__localId: localId
+				};
+			}
 
-					if (
-						question.__localId &&
-						!usedKeys.has(
-							question.__localId
-						)
-					) {
-						usedKeys.add(
-							question.__localId
-						);
+			if (
+				question.__localId &&
+				!usedKeys.has(question.__localId)
+			) {
+				usedKeys.add(question.__localId);
 
-						return question;
-					}
+				return question;
+			}
 
-					const localId =
-						createLocalQuestionKey();
+			const localId = createLocalQuestionKey();
 
-					usedKeys.add(
-						localId
-					);
+			usedKeys.add(localId);
 
-					return {
-						...question,
-						__localId:
-							localId
-					};
-				}
-			);
-
-		saveDraft?.(survey);
+			return {
+				...question,
+				__localId: localId
+			};
+		});
 	}
 
 	async function loadSurvey() {
@@ -120,45 +102,69 @@
 		error = '';
 
 		try {
-			const id =
-				page.params.id;
+			const id = page.params.id;
 
-			const result =
-				await getSurvey(id);
+			if (!id) {
+				throw new Error('Survey ID is missing.');
+			}
 
+			/*
+			 * FIRST:
+			 * Check if we have a local draft.
+			 *
+			 * This is what preserves changes when:
+			 *
+			 * Builder → Preview → Builder
+			 */
+			let result = await getSurvey(id);
+
+			/*
+			 * If getSurvey already restores the draft,
+			 * use it.
+			 *
+			 * Otherwise the store's draftStore should
+			 * provide the local draft.
+			 */
 			survey = result;
 
 			ensureLocalQuestionIds();
 
-			selectedQuestionId =
-				null;
+			selectedQuestionId = null;
 
-			hasUnsavedChanges =
-				true;
+			/*
+			 * We intentionally DON'T set this to true
+			 * when loading.
+			 *
+			 * Opening the builder by itself does not
+			 * mean there are unsaved changes.
+			 */
+			hasUnsavedChanges = false;
+
+			/*
+			 * Check whether the loaded survey contains
+			 * a local draft.
+			 */
+			if (survey?.__hasDraft) {
+				hasUnsavedChanges = true;
+			}
 		} catch (err) {
 			error =
 				err?.message ??
-				'Failed to load survey';
+				'Failed to load survey.';
 		} finally {
 			loading = false;
 		}
 	}
 
-	function handleAddQuestion(
-		type
-	) {
-		if (
-			!survey ||
-			!type
-		) {
+	function handleAddQuestion(type) {
+		if (!survey || !type) {
 			return;
 		}
 
-		const question =
-			addQuestion(
-				survey,
-				type
-			);
+		const question = addQuestion(
+			survey,
+			type
+		);
 
 		if (!question) {
 			return;
@@ -173,9 +179,7 @@
 		markChanged();
 	}
 
-	function handleSelectQuestion(
-		question
-	) {
+	function handleSelectQuestion(question) {
 		if (!question) return;
 
 		selectedQuestionId =
@@ -183,25 +187,18 @@
 			question.__localId;
 	}
 
-	let selectedQuestion =
-		$derived(
-			survey?.questions?.find(
-				(question) =>
-					(
-						question.id ??
-						question.__localId
-					) ===
-					selectedQuestionId
-			) ?? null
-		);
+	let selectedQuestion = $derived(
+		survey?.questions?.find(
+			(question) =>
+				(
+					question.id ??
+					question.__localId
+				) === selectedQuestionId
+		) ?? null
+	);
 
-	function handleUpdateQuestion(
-		updatedQuestion
-	) {
-		if (
-			!survey ||
-			!updatedQuestion
-		) {
+	function handleUpdateQuestion(updatedQuestion) {
+		if (!survey || !updatedQuestion) {
 			return;
 		}
 
@@ -215,8 +212,7 @@
 					(
 						question.id ??
 						question.__localId
-					) ===
-					questionKey
+					) === questionKey
 			);
 
 		if (index === -1) {
@@ -224,14 +220,11 @@
 		}
 
 		const updated = {
-			...survey.questions[
-				index
-			],
+			...survey.questions[index],
 			...updatedQuestion,
 
 			__localId:
-				survey.questions[index]
-					.__localId ??
+				survey.questions[index].__localId ??
 				updatedQuestion.__localId ??
 				updatedQuestion.id ??
 				createLocalQuestionKey()
@@ -252,13 +245,8 @@
 		markChanged();
 	}
 
-	function handleDeleteQuestion(
-		question
-	) {
-		if (
-			!survey ||
-			!question
-		) {
+	function handleDeleteQuestion(question) {
+		if (!survey || !question) {
 			return;
 		}
 
@@ -271,24 +259,15 @@
 			question
 		);
 
-		if (
-			selectedQuestionId ===
-			key
-		) {
-			selectedQuestionId =
-				null;
+		if (selectedQuestionId === key) {
+			selectedQuestionId = null;
 		}
 
 		markChanged();
 	}
 
-	function handleDuplicateQuestion(
-		question
-	) {
-		if (
-			!survey ||
-			!question
-		) {
+	function handleDuplicateQuestion(question) {
+		if (!survey || !question) {
 			return;
 		}
 
@@ -318,23 +297,18 @@
 		if (!survey) return;
 
 		if (
-			fromIndex ===
-				undefined ||
-			toIndex ===
-				undefined
+			fromIndex === undefined ||
+			toIndex === undefined
 		) {
 			return;
 		}
 
 		if (
-			fromIndex ===
-				toIndex ||
+			fromIndex === toIndex ||
 			fromIndex < 0 ||
 			toIndex < 0 ||
-			fromIndex >=
-				survey.questions.length ||
-			toIndex >=
-				survey.questions.length
+			fromIndex >= survey.questions.length ||
+			toIndex >= survey.questions.length
 		) {
 			return;
 		}
@@ -343,9 +317,7 @@
 			...survey.questions
 		];
 
-		const [
-			movedQuestion
-		] =
+		const [movedQuestion] =
 			questions.splice(
 				fromIndex,
 				1
@@ -363,12 +335,12 @@
 		markChanged();
 	}
 
+	/*
+	 * UPDATE PUBLISHED SURVEY
+	 */
 	async function handleUpdateSurvey() {
-		if (
-			!survey ||
-			publishing
-		) {
-			return;
+		if (!survey || publishing) {
+			return false;
 		}
 
 		publishing = true;
@@ -379,38 +351,71 @@
 				survey
 			);
 
-			hasUnsavedChanges =
-				false;
+			/*
+			 * Save succeeded.
+			 *
+			 * Remove local draft because the
+			 * backend now contains the changes.
+			 */
+			clearDraft?.(survey.id);
+
+			hasUnsavedChanges = false;
+
+			return true;
 		} catch (err) {
 			error =
 				err?.message ??
 				'Failed to update survey';
+
+			return false;
 		} finally {
 			publishing = false;
 		}
 	}
 
+	/*
+	 * PUBLISH OR UPDATE
+	 */
 	async function handleHeaderAction() {
-		if (!survey) return;
-
 		if (
-			survey.status ===
-			'Published'
+			!survey ||
+			publishing
 		) {
-			await handleUpdateSurvey();
-
-			return;
+			return false;
 		}
 
-		await handlePublish();
+		let success = false;
+
+		if (
+			survey.status === 'Published'
+		) {
+			success =
+				await handleUpdateSurvey();
+		} else {
+			success =
+				await handlePublish();
+		}
+
+		/*
+		 * ONLY redirect after backend
+		 * operation succeeded.
+		 */
+		if (success) {
+			await goto('/dashboard');
+		}
+
+		return success;
 	}
 
+	/*
+	 * PUBLISH DRAFT
+	 */
 	async function handlePublish() {
 		if (
 			!survey ||
 			publishing
 		) {
-			return;
+			return false;
 		}
 
 		publishing = true;
@@ -426,49 +431,106 @@
 				survey = {
 					...survey,
 					...updatedSurvey,
-
-					status:
-						'Published'
+					status: 'Published'
 				};
-
-				ensureLocalQuestionIds();
+			} else {
+				survey = {
+					...survey,
+					status: 'Published'
+				};
 			}
 
-			hasUnsavedChanges =
-				false;
+			ensureLocalQuestionIds();
+
+			/*
+			 * Backend now contains everything.
+			 * Remove the local draft.
+			 */
+			clearDraft?.(survey.id);
+
+			hasUnsavedChanges = false;
+
+			return true;
 		} catch (err) {
 			error =
 				err?.message ??
 				'Failed to publish survey';
+
+			return false;
 		} finally {
 			publishing = false;
 		}
 	}
 
-	function handleLeave(
-		destination
-	) {
-		goto(destination);
+	/*
+	 * BACK TO DASHBOARD
+	 *
+	 * This is the ONLY place where the
+	 * discard modal should appear.
+	 */
+	function handleLeave() {
+		if (publishing) {
+			return;
+		}
+
+		/*
+		 * No changes:
+		 * go directly to dashboard.
+		 */
+		if (!hasUnsavedChanges) {
+			goto('/dashboard');
+			return;
+		}
+
+		/*
+		 * Changes exist:
+		 * show modal.
+		 */
+		showDiscardModal = true;
 	}
 
-	$effect(() => {
-		const id =
-			page.params.id;
+	/*
+	 * CANCEL
+	 *
+	 * Stay in builder.
+	 */
+	function cancelDiscard() {
+		showDiscardModal = false;
+	}
 
-		if (id) {
-			loadSurvey();
-		}
-	});
+	/*
+	 * DISCARD
+	 *
+	 * IMPORTANT:
+	 * No backend request.
+	 *
+	 * We only remove the local draft.
+	 */
+	function discardChanges() {
+		showDiscardModal = false;
+
+		clearDraft?.(page.params.id);
+
+		survey = null;
+		selectedQuestionId = null;
+		hasUnsavedChanges = false;
+
+		goto('/dashboard');
+	}
+
+	/*
+	 * Load the survey when entering
+	 * the builder.
+	 */
+	loadSurvey();
 </script>
 
 {#if loading}
-	<div
-		class="flex h-screen items-center justify-center bg-slate-50"
-	>
-		<LoadingState />
-	</div>
+
+	<BuilderSkeleton />
 
 {:else if error && !survey}
+
 	<div
 		class="flex h-screen items-center justify-center bg-slate-50"
 	>
@@ -479,6 +541,7 @@
 	</div>
 
 {:else if survey}
+
 	<div
 		class="flex h-screen flex-col overflow-hidden bg-slate-50"
 	>
@@ -519,6 +582,7 @@
 			/>
 
 			{#if selectedQuestion}
+
 				<QuestionSettings
 					question={
 						selectedQuestion
@@ -527,7 +591,9 @@
 						handleUpdateQuestion
 					}
 				/>
+
 			{:else}
+
 				<aside
 					class="hidden w-72 shrink-0 border-l border-[#E8E2F2] bg-white lg:block"
 				>
@@ -560,7 +626,57 @@
 						</div>
 					</div>
 				</aside>
+
 			{/if}
 		</div>
 	</div>
+
+	<!-- DISCARD MODAL -->
+
+	{#if showDiscardModal}
+
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+		>
+			<div
+				class="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl"
+				role="dialog"
+				aria-modal="true"
+			>
+				<h2
+					class="text-lg font-semibold text-slate-900"
+				>
+					Discard changes?
+				</h2>
+
+				<p
+					class="mt-2 text-sm text-slate-500"
+				>
+					Your unsaved changes will be lost.
+				</p>
+
+				<div
+					class="mt-5 flex justify-end gap-2"
+				>
+					<button
+						type="button"
+						onclick={cancelDiscard}
+						class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+					>
+						Cancel
+					</button>
+
+					<button
+						type="button"
+						onclick={discardChanges}
+						class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+					>
+						Discard
+					</button>
+				</div>
+			</div>
+		</div>
+
+	{/if}
+
 {/if}

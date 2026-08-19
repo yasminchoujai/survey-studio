@@ -21,7 +21,8 @@ export async function submitResponse(surveyId, answers) {
 		body: JSON.stringify({
 			surveyId,
 			answers
-		})
+		}),
+		returnFullResponse: true
 	});
 
 	return validate(submitResponseSchema, data);

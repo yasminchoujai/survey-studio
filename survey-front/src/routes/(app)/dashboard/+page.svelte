@@ -5,9 +5,9 @@
 	import { useSurveys } from '$lib/stores/surveys.svelte.js';
 
 	import Card from '$lib/components/ui/Card.svelte';
-	import LoadingState from '$lib/components/ui/LoadingState.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import DashboardSkeleton from '$lib/components/ui/DashboardSkeleton.svelte';
 
 	import DashboardToolbar from '$lib/components/dashboard/DashboardToolbar.svelte';
 	import SurveyTable from '$lib/components/dashboard/SurveyTable.svelte';
@@ -22,7 +22,6 @@
 	let view = $state('table');
 	let currentPage = $state(1);
 
-	// Loading/error belong to this page
 	let loading = $state(true);
 	let error = $state(null);
 
@@ -42,7 +41,9 @@
 		try {
 			await load();
 		} catch (err) {
-			error = err?.message || 'Failed to load surveys.';
+			error =
+				err?.message ||
+				'Failed to load surveys.';
 		} finally {
 			loading = false;
 		}
@@ -52,36 +53,57 @@
 		loadSurveys();
 	});
 
-
 	let filteredSurveys = $derived.by(() => {
+		const searchValue = search
+			.trim()
+			.toLowerCase();
+
 		return surveys.filter((survey) => {
 			const matchesSearch =
-				survey.title?.toLowerCase().includes(search.toLowerCase()) ||
-				survey.description?.toLowerCase().includes(search.toLowerCase());
+				!searchValue ||
+				survey.title
+					?.toLowerCase()
+					.includes(searchValue) ||
+				survey.description
+					?.toLowerCase()
+					.includes(searchValue);
 
 			const matchesStatus =
-				status === 'All' || survey.status === status;
+				status === 'All' ||
+				survey.status === status;
 
 			return matchesSearch && matchesStatus;
 		});
 	});
 
-	let totalPages = $derived.by(() =>
-		Math.max(1, Math.ceil(filteredSurveys.length / pageSize))
-	);
-
-	let paginatedSurveys = $derived.by(() => {
-		const start = (currentPage - 1) * pageSize;
-
-		return filteredSurveys.slice(start, start + pageSize);
+	let totalPages = $derived.by(() => {
+		return Math.max(
+			1,
+			Math.ceil(
+				filteredSurveys.length / pageSize
+			)
+		);
 	});
 
+	let paginatedSurveys = $derived.by(() => {
+		const start =
+			(currentPage - 1) * pageSize;
+
+		return filteredSurveys.slice(
+			start,
+			start + pageSize
+		);
+	});
+
+	// Reset pagination when filters change
 	$effect(() => {
 		search;
 		status;
+
 		currentPage = 1;
 	});
 
+	// Keep current page valid
 	$effect(() => {
 		if (currentPage > totalPages) {
 			currentPage = totalPages;
@@ -91,17 +113,24 @@
 
 <div class="mx-auto max-w-7xl space-y-5 px-10">
 
+	<!-- Dashboard Header -->
+
 	<div class="flex items-end justify-between py-6">
 		<div>
-			<h1 class="text-3xl font-bold tracking-tight text-[#3B1E54]">
+			<h1
+				class="text-3xl font-bold tracking-tight text-[#3B1E54]"
+			>
 				Survey Dashboard
 			</h1>
 
 			<p class="mt-1 text-sm text-slate-500">
-				Create, manage and publish surveys from one place.
+				Create, manage and publish surveys
+				from one place.
 			</p>
 		</div>
 	</div>
+
+	<!-- Toolbar -->
 
 	<DashboardToolbar
 		bind:search
@@ -110,12 +139,11 @@
 		onCreate={() => (showModal = true)}
 	/>
 
+	<!-- Content -->
+
 	{#if loading}
 
-		<LoadingState
-			message="Loading surveys..."
-			description="Fetching your surveys."
-		/>
+		<DashboardSkeleton {view} />
 
 	{:else if error}
 
@@ -138,6 +166,8 @@
 
 	{:else}
 
+		<!-- Surveys -->
+
 		{#if view === 'table'}
 
 			<Card padding="none">
@@ -149,7 +179,9 @@
 
 		{:else}
 
-			<div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+			<div
+				class="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
+			>
 				{#each paginatedSurveys as survey (survey.id)}
 					<SurveyCard
 						{survey}
@@ -160,12 +192,16 @@
 
 		{/if}
 
+		<!-- Pagination -->
+
 		<Pagination
 			bind:currentPage
 			{totalPages}
 		/>
 
 	{/if}
+
+	<!-- Create Survey Modal -->
 
 	<CreateSurveyModal
 		bind:open={showModal}
