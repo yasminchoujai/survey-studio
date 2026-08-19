@@ -71,4 +71,4 @@ export function formatAnswer(question, value) {
 	}
 
 	return String(value);
-}   
+}

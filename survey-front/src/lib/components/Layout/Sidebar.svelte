@@ -2,13 +2,13 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 
-	import SidebarItem from './SidebarItem.svelte';
-
 	import {
 		LayoutDashboard,
 		BarChart3,
 		LogOut
 	} from 'lucide-svelte';
+
+	import SidebarItem from './SidebarItem.svelte';
 
 	import { useAuth } from '$lib/stores/auth.svelte.js';
 
@@ -21,10 +21,9 @@
 </script>
 
 <aside
-	class="flex h-screen w-64 flex-col border-r border-[#EBE4F4] bg-white"
+	class="flex h-screen w-64 shrink-0 flex-col border-r border-[#EBE4F4] bg-white"
 >
 	<!-- Logo -->
-
 	<div class="border-b border-[#EBE4F4] px-4 py-8">
 		<div class="flex flex-col items-center gap-2">
 			<div
@@ -46,7 +45,6 @@
 	</div>
 
 	<!-- Navigation -->
-
 	<nav class="flex-1 px-4 py-6">
 		<p
 			class="mb-3 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400"
@@ -72,7 +70,6 @@
 	</nav>
 
 	<!-- Logout -->
-
 	<div class="border-t border-[#EBE4F4] p-4">
 		<button
 			type="button"

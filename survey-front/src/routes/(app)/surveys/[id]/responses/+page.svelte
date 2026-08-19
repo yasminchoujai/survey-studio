@@ -5,9 +5,9 @@
 
 	import { useSurveys } from '$lib/stores/surveys.svelte.js';
 
-	import LoadingState from '$lib/components/ui/LoadingState.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import ResponsesSkeleton from '$lib/components/responses/ResponsesSkeleton.svelte';
 
 	import ResponsesHeader from '$lib/components/responses/ResponsesHeader.svelte';
 	import ResponsesSummary from '$lib/components/responses/ResponsesSummary.svelte';
@@ -32,13 +32,10 @@
 				throw new Error('Survey ID is missing.');
 			}
 
-			const result =
-				await getSurveyWithResponses(surveyId);
+			const result = await getSurveyWithResponses(surveyId);
 
 			if (!result) {
-				throw new Error(
-					'No response data was returned.'
-				);
+				throw new Error('No response data was returned.');
 			}
 
 			survey = result.survey ?? null;
@@ -46,11 +43,8 @@
 			responses = Array.isArray(result.responses)
 				? result.responses
 				: [];
-
 		} catch (err) {
-			error =
-				err?.message ??
-				'Failed to load responses.';
+			error = err?.message ?? 'Failed to load responses.';
 		} finally {
 			loading = false;
 		}
@@ -63,15 +57,11 @@
 	let sortedResponses = $derived(
 		[...responses].sort((a, b) => {
 			const dateA = new Date(
-				a.submittedAt ??
-				a.createdAt ??
-				0
+				a.submittedAt ?? a.createdAt ?? 0
 			);
 
 			const dateB = new Date(
-				b.submittedAt ??
-				b.createdAt ??
-				0
+				b.submittedAt ?? b.createdAt ?? 0
 			);
 
 			return dateB - dateA;
@@ -79,15 +69,9 @@
 	);
 </script>
 
-
 {#if loading}
 
-	<LoadingState
-		fullScreen
-		message="Loading responses..."
-		description="Fetching survey submissions."
-	/>
-
+	<ResponsesSkeleton />
 
 {:else if error}
 
@@ -98,32 +82,23 @@
 		onRetry={loadResponses}
 	/>
 
-
 {:else if survey}
 
 	<div class="min-h-screen bg-slate-50">
-
-		<!-- HEADER -->
-
+		<!-- Header -->
 		<ResponsesHeader {survey} />
 
-
-		<!-- CONTENT -->
-
+		<!-- Content -->
 		<div
 			class="mx-auto max-w-5xl space-y-6 p-6 md:p-8"
 		>
-
-			<!-- SUMMARY -->
-
+			<!-- Summary -->
 			<ResponsesSummary
 				{survey}
 				{responses}
 			/>
 
-
-			<!-- RESPONSES -->
-
+			<!-- Responses -->
 			{#if sortedResponses.length === 0}
 
 				<EmptyState
@@ -135,28 +110,21 @@
 			{:else}
 
 				<div class="space-y-4">
-
-					{#each sortedResponses as response, index (response.id)}
-
+					{#each sortedResponses as response, index (
+						response.id
+					)}
 						<ResponseCard
 							{survey}
 							{response}
 							{index}
-							expanded={
-								sortedResponses.length === 1
-							}
+							expanded={sortedResponses.length === 1}
 						/>
-
 					{/each}
-
 				</div>
 
 			{/if}
-
 		</div>
-
 	</div>
-
 
 {:else}
 

@@ -11,88 +11,99 @@
 
 	let { survey } = $props();
 
+	let responseCount = $derived(
+		survey?.responses ?? 0
+	);
+
 	function back() {
 		goto('/dashboard');
 	}
 
 	function edit() {
+		if (!survey?.id) return;
+
 		goto(`/surveys/${survey.id}/builder`);
 	}
 
 	function preview() {
+		if (!survey?.id) return;
+
 		goto(`/surveys/${survey.id}/preview`);
 	}
-
-	const responseCount = $derived(
-		survey?.responses ?? 0
-	);
 </script>
 
 <header
-	class="flex min-h-14 items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-2"
+	class="flex h-16 items-center justify-between gap-4 border-b border-slate-200 bg-white px-6"
 >
 	<!-- LEFT -->
 
 	<div
 		class="flex min-w-0 items-center gap-3"
 	>
+		<!-- Back -->
+
 		<Button
 			variant="ghost"
 			size="icon"
 			onclick={back}
+			title="Back to dashboard"
 		>
-			<ArrowLeft size={18} />
+			<ArrowLeft class="h-5 w-5" />
 		</Button>
+
+		<!-- Survey information -->
 
 		<div
 			class="flex min-w-0 items-center gap-3"
 		>
 			<h1
-				class="truncate text-sm font-medium text-slate-800"
+				class="truncate text-base font-semibold text-slate-800"
 			>
-				{survey.title}
+				{survey?.title || 'Untitled Survey'}
 			</h1>
 
 			<StatusBadge
-				status={survey.status}
+				status={survey?.status}
 			/>
 
 			<span
-				class="hidden text-xs text-slate-500 sm:block"
+				class="hidden text-sm text-slate-500 sm:block"
 			>
-				•
-				{responseCount}
-				response{responseCount === 1
-					? ''
-					: 's'}
+				• {responseCount}
+				{responseCount === 1
+					? ' response'
+					: ' responses'}
 			</span>
 		</div>
 	</div>
 
+	<!-- RIGHT -->
 
-	<!-- ACTIONS -->
-
-	<div class="flex shrink-0 items-center gap-2">
+	<div
+		class="flex shrink-0 items-center gap-3"
+	>
+		<!-- Preview -->
 
 		<Button
 			variant="outline"
 			onclick={preview}
+			disabled={!survey?.id}
 		>
-			<Eye size={16} />
-			<span class="hidden sm:inline">
-				Preview
-			</span>
+			<Eye class="h-4 w-4" />
+
+			<span>Preview</span>
 		</Button>
+
+		<!-- Edit -->
 
 		<Button
 			variant="outline"
 			onclick={edit}
+			disabled={!survey?.id}
 		>
-			<Pencil size={16} />
-			<span class="hidden sm:inline">
-				Edit
-			</span>
-		</Button>
+			<Pencil class="h-4 w-4" />
 
+			<span>Edit</span>
+		</Button>
 	</div>
 </header>

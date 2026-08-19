@@ -6,9 +6,13 @@ export async function request(url, options = {}) {
 			? localStorage.getItem('authToken')
 			: null;
 
+	// Don't send this custom option to fetch()
+	const { returnFullResponse = false, ...fetchOptions } =
+		options;
+
 	const headers = {
 		'Content-Type': 'application/json',
-		...(options.headers ?? {})
+		...(fetchOptions.headers ?? {})
 	};
 
 	if (token && !headers.Authorization) {
@@ -16,7 +20,7 @@ export async function request(url, options = {}) {
 	}
 
 	const response = await fetch(`${API_URL}${url}`, {
-		...options,
+		...fetchOptions,
 		headers
 	});
 
@@ -36,6 +40,12 @@ export async function request(url, options = {}) {
 		error.status = response.status;
 
 		throw error;
+	}
+
+	// Some endpoints return data,
+	// while others return success/message directly.
+	if (returnFullResponse) {
+		return result;
 	}
 
 	return result?.data;
