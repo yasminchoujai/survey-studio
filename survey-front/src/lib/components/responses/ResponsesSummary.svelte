@@ -2,7 +2,6 @@
 	import {
 		Users,
 		ListChecks,
-		Layers,
 		Clock
 	} from 'lucide-svelte';
 
@@ -22,29 +21,22 @@
 			return '—';
 		}
 
-		return parsed.toLocaleDateString(
-			'en-US',
-			{
-				month: 'short',
-				day: 'numeric',
-				year: 'numeric'
-			}
-		);
+		return parsed.toLocaleDateString('en-US', {
+			month: 'short',
+			day: 'numeric',
+			year: 'numeric'
+		});
 	}
 
-	const sections = $derived(
-		Array.isArray(survey?.sections)
-			? survey.sections
+	// Questions now come directly from the survey.
+	const questions = $derived(
+		Array.isArray(survey?.questions)
+			? survey.questions
 			: []
 	);
 
 	const questionCount = $derived(
-		sections.reduce(
-			(total, section) =>
-				total +
-				(section?.questions?.length ?? 0),
-			0
-		)
+		questions.length
 	);
 
 	const lastResponseAt = $derived(() => {
@@ -66,7 +58,8 @@
 					!Number.isNaN(date.getTime())
 			)
 			.sort(
-				(a, b) => b.getTime() - a.getTime()
+				(a, b) =>
+					b.getTime() - a.getTime()
 			);
 
 		return dates[0] ?? null;
@@ -77,11 +70,6 @@
 			label: 'Total Responses',
 			value: responses.length,
 			icon: Users
-		},
-		{
-			label: 'Sections',
-			value: sections.length,
-			icon: Layers
 		},
 		{
 			label: 'Questions',
@@ -96,11 +84,8 @@
 	]);
 </script>
 
-<div
-	class="grid grid-cols-2 gap-4 lg:grid-cols-4"
->
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
 	{#each stats as stat}
-
 		<Card
 			class="border border-slate-200 bg-white p-4"
 		>
@@ -126,6 +111,5 @@
 				{stat.value}
 			</p>
 		</Card>
-
 	{/each}
 </div>
